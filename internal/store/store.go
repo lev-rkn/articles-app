@@ -1,6 +1,7 @@
 package store
 
 import (
+	"ads-service/internal/store/postgres"
 	"context"
 	"log/slog"
 
@@ -13,10 +14,10 @@ import (
 )
 
 type Store struct {
-	Pg *pgx.Conn
+	Ad AdRepo
 }
 
-func New(logger *slog.Logger, cfg *koanf.Koanf) *Store {
+func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Store {
 	// connect to postgres
 	conn, err := pgx.Connect(context.Background(), cfg.MustString("pg_url"))
 	if err != nil {
@@ -37,7 +38,7 @@ func New(logger *slog.Logger, cfg *koanf.Koanf) *Store {
 	}
 
 	var store = &Store{
-		Pg: conn,
+		Ad: postgres.NewAdPgRepo(conn),
 	}
 
 	return store

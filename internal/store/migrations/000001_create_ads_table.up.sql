@@ -3,5 +3,6 @@ CREATE TABLE "advertisements" (
   "title" varchar NOT NULL,
   "description" text NOT NULL,
   "price" bigint NOT NULL,
-  "photos" varchar[] NOT NULL
+  "photos" varchar[] NOT NULL,
+  "timestamp" timestamptz NOT NULL DEFAULT (now())
 );
