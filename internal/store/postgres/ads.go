@@ -40,7 +40,7 @@ func (s *AdPgRepo) GetOne(id int) (*models.Ad, error) {
 }
 
 func (s *AdPgRepo) GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error) {
-	// build order by price and time query
+	// сборка строки сортировки по цене и по дате для запроса
 	var orderQuery string
 	sorts := make([]string, 0, 2)
 	if priceSort != "" {
@@ -64,7 +64,7 @@ func (s *AdPgRepo) GetAll(priceSort string, dateSort string, page int) ([]*model
 	}
 	defer rows.Close()
 
-	// pull all ads to array
+	// Перекладывание всех объектов объявлений в массив
 	adsArr := make([]*models.Ad, 0, 10)
 	for rows.Next() {
 		ad := &models.Ad{}

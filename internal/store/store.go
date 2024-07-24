@@ -18,7 +18,7 @@ type Store struct {
 }
 
 func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Store {
-	// connect to postgres
+	// подключение к postgres
 	conn, err := pgx.Connect(context.Background(), cfg.MustString("pg_url"))
 	if err != nil {
 
@@ -26,7 +26,7 @@ func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Store {
 			"err", err.Error())
 	}
 
-	// load migrations
+	// запуск миграций
 	m, err := migrate.New(cfg.MustString("migrations_dir"), cfg.MustString("pg_url"))
 	if err != nil {
 		logger.Error("new migrations",

@@ -14,19 +14,19 @@ import (
 )
 
 func Initialization() {
-	// init logger
+	// Иницилизация логгера
 	logger := logger.New()
 
-	// init config
+	// Иницилизация конфига
 	cfg := config.New(logger)
 
-	// init db
+	// Иницилизация хранилища
 	store := store.NewRepository(logger, cfg)
 
-	// init router
+	// Иницилизация контроллеров
 	router := controllers.New(services.NewService(store, logger), context.Background(), logger)
 
-	// run server
+	// Запуск сервера
 	logger.Info("start server",
 		"address", cfg.MustString("http_server_address"))
 	http.ListenAndServe(cfg.MustString("http_server_address"), router)

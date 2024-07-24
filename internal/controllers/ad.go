@@ -9,6 +9,7 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
+	"unicode/utf8"
 )
 
 type adController struct {
@@ -38,7 +39,24 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: validate req
+	// проверка, что длина заголовка от 0 до 200
+	if len(ad.Title) == 0 || utf8.RuneCountInString(ad.Title) > 200 {
+		h.logger.Error("invalid title", "title", ad.Title)
+		http.Error(w, "Длина заголовка должна быть длиной от 0 до 200 симоволов", http.StatusBadRequest)
+		return
+	}
+	// проверка, что длина описания не должна превышать 1000 символов
+	if len(ad.Description) == 0 || utf8.RuneCountInString(ad.Description) > 1000 {
+		h.logger.Error("invalid description", "description", ad.Description)
+		http.Error(w, "Длина описания должна быть длиной до 1000 симоволов", http.StatusBadRequest)
+		return
+	}
+	// проверка, что нельзя загрузить больше чем 3 ссылки на фото
+	if len(ad.Photos) > 3 {
+		h.logger.Error("invalid photos", "photos", ad.Photos)
+		http.Error(w, "Нельзя загрузить больше чем 3 ссылки на фото", http.StatusBadRequest)
+		return
+	}
 
 	id, err := h.service.Ad.Create(ad)
 	if err != nil {
@@ -55,18 +73,17 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	page, price, date := q.Get("page"), q.Get("price"), q.Get("date")
 
-	// checking that page query parameter is an integer
+	// проверка, что номер страницы является целочисленным значением
 	pageN, err := strconv.Atoi(page)
 	if err != nil {
 		h.logger.Error("unable to parse page number", "err", err.Error())
-		http.Error(w, "Invalid page number", http.StatusBadRequest)
+		http.Error(w, "Невалидный номер страницы", http.StatusBadRequest)
 		return
 	}
 
-	// checking that price query parameter equal to asc or desc
+	// Проверка, что параметры сортировки по цене содержат либо asc, либо desc
 	if q.Has("price") {
 		if price == "asc" || price == "desc" {
-			// for build query
 			price = "price " + price
 		} else {
 			h.logger.Error("Invalid price query parameter: " + price)
@@ -75,10 +92,9 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// checking that date query parameter equal to asc or desc
+	// Проверка, что параметры сортировки по дате содержат либо asc, либо desc
 	if q.Has("date") {
 		if date == "asc" || date == "desc" {
-			// for build query
 			date = "date " + date
 		} else {
 			h.logger.Error("Invalid date query parameter: " + date)
