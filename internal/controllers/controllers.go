@@ -7,7 +7,7 @@ import (
 	"net/http"
 )
 
-func New(service service.AdService, ctx context.Context, logger *slog.Logger) *http.ServeMux {
+func New(service *services.Service, ctx context.Context, logger *slog.Logger) *http.ServeMux {
 	mux := http.NewServeMux()
     adController := NewAdController(service, ctx, logger)
     mux.HandleFunc("POST /ad/create/", adController.Create)

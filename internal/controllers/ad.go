@@ -12,18 +12,18 @@ import (
 )
 
 type adController struct {
-	adService service.AdService
+	service *services.Service
 	ctx       context.Context
 	logger    *slog.Logger
 }
 
 func NewAdController(
-	adService service.AdService,
+	service *services.Service,
 	ctx context.Context,
 	logger *slog.Logger,
 ) *adController {
 	return &adController{
-		adService: adService,
+		service: service,
 		ctx:       ctx,
 		logger:    logger,
 	}
@@ -40,7 +40,7 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: validate req
 
-	id, err := h.adService.Create(ad)
+	id, err := h.service.Ad.Create(ad)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -87,7 +87,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	adsArr, err := h.adService.GetAll(price, date, pageN)
+	adsArr, err := h.service.Ad.GetAll(price, date, pageN)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -113,7 +113,7 @@ func (h *adController) GetOne(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ad, err := h.adService.GetOne(id)
+	ad, err := h.service.Ad.GetOne(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

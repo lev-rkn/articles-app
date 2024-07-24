@@ -3,7 +3,7 @@ package app
 import (
 	"ads-service/internal/config"
 	"ads-service/internal/controllers"
-	"ads-service/internal/service/ad"
+	services "ads-service/internal/service"
 	"ads-service/internal/store"
 	"ads-service/logger"
 	"context"
@@ -24,7 +24,7 @@ func Initialization() {
 	store := store.NewRepository(logger, cfg)
 
 	// init router
-	router := controllers.New(ad.NewService(store, logger), context.Background(), logger)
+	router := controllers.New(services.NewService(store, logger), context.Background(), logger)
 
 	// run server
 	logger.Info("start server",
