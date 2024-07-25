@@ -2,7 +2,7 @@ package services
 
 import (
 	"ads-service/internal/models"
-	"ads-service/internal/store"
+	"ads-service/internal/repository"
 	"log/slog"
 )
 
@@ -17,10 +17,10 @@ type Service struct {
 }
 
 func NewService(
-	store *store.Store,
+	repository *repository.Repository,
 	logger *slog.Logger,
 ) *Service {
 	return &Service{
-		Ad: &adService{store: store, logger: logger},
+		Ad: &adService{repository: repository, logger: logger},
 	}
 }

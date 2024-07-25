@@ -1,3 +1,3 @@
 pg_url: postgres://postgres:postgres@postgres/ads-service?sslmode=disable
-migrations_dir: file://internal/store/migrations
+migrations_dir: file://migrations
 http_server_address: 0.0.0.0:8080

@@ -19,13 +19,13 @@ type adController struct {
 }
 
 func NewAdController(
-	service *services.Service,
 	ctx context.Context,
+	service *services.Service,
 	logger *slog.Logger,
 ) *adController {
 	return &adController{
-		service: service,
 		ctx:       ctx,
+		service: service,
 		logger:    logger,
 	}
 }
@@ -39,14 +39,14 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// проверка, что длина заголовка от 0 до 200
-	if len(ad.Title) == 0 || utf8.RuneCountInString(ad.Title) > 200 {
+	// проверка, что длина заголовка от 1 до 200
+	if len(ad.Title) > 0 || utf8.RuneCountInString(ad.Title) > 200 {
 		h.logger.Error("invalid title", "title", ad.Title)
-		http.Error(w, "Длина заголовка должна быть длиной от 0 до 200 симоволов", http.StatusBadRequest)
+		http.Error(w, "Длина заголовка должна быть длиной от 1 до 200 симоволов", http.StatusBadRequest)
 		return
 	}
 	// проверка, что длина описания не должна превышать 1000 символов
-	if len(ad.Description) == 0 || utf8.RuneCountInString(ad.Description) > 1000 {
+	if utf8.RuneCountInString(ad.Description) > 1000 {
 		h.logger.Error("invalid description", "description", ad.Description)
 		http.Error(w, "Длина описания должна быть длиной до 1000 симоволов", http.StatusBadRequest)
 		return

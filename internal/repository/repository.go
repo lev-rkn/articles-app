@@ -1,7 +1,7 @@
-package store
+package repository
 
 import (
-	"ads-service/internal/store/postgres"
+	"ads-service/internal/repository/postgres"
 	"context"
 	"log/slog"
 
@@ -13,13 +13,13 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-type Store struct {
+type Repository struct {
 	Ad AdRepo
 }
 
-func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Store {
+func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Repository {
 	// подключение к postgres
-	conn, err := pgx.Connect(context.Background(), cfg.MustString("pg_url"))
+	conn, err := pgx.Connect(context.Background(), cfg.String("pg_url"))
 	if err != nil {
 
 		logger.Error("Unable to connect to database",
@@ -27,7 +27,7 @@ func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Store {
 	}
 
 	// запуск миграций
-	m, err := migrate.New(cfg.MustString("migrations_dir"), cfg.MustString("pg_url"))
+	m, err := migrate.New(cfg.String("migrations_dir"), cfg.String("pg_url"))
 	if err != nil {
 		logger.Error("new migrations",
 			"err", err.Error())
@@ -37,9 +37,9 @@ func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Store {
 			"err", err.Error())
 	}
 
-	var store = &Store{
+	var repository = &Repository{
 		Ad: postgres.NewAdPgRepo(conn),
 	}
 
-	return store
+	return repository
 }

@@ -3,8 +3,8 @@ package app
 import (
 	"ads-service/internal/config"
 	"ads-service/internal/controllers"
+	"ads-service/internal/repository"
 	services "ads-service/internal/service"
-	"ads-service/internal/store"
 	"ads-service/logger"
 	"context"
 
@@ -16,18 +16,28 @@ import (
 func Initialization() {
 	// Иницилизация логгера
 	logger := logger.New()
+	if err := recover(); err != nil {
+		logger.Error("panic", "err", err)
+	}
 
 	// Иницилизация конфига
 	cfg := config.New(logger)
 
 	// Иницилизация хранилища
-	store := store.NewRepository(logger, cfg)
+	repository := repository.NewRepository(logger, cfg)
+
+	// Новый конкекст
+	ctx := context.Background()
 
 	// Иницилизация контроллеров
-	router := controllers.New(services.NewService(store, logger), context.Background(), logger)
+	router := controllers.New(ctx, services.NewService(repository, logger), logger)
 
 	// Запуск сервера
-	logger.Info("start server",
-		"address", cfg.MustString("http_server_address"))
-	http.ListenAndServe(cfg.MustString("http_server_address"), router)
+	serverAddr := cfg.String("http_server_address")
+	logger.Info("starting server at port: " + serverAddr)
+	
+	if err := http.ListenAndServe(serverAddr, router); err != nil {
+		logger.Error("unable to start server", "err", err.Error())
+		return
+	}
 }

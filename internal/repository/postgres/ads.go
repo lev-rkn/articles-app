@@ -9,14 +9,14 @@ import (
 )
 
 type AdPgRepo struct {
-	conn *pgx.Conn
 	ctx  context.Context
+	conn *pgx.Conn
 }
 
 func NewAdPgRepo(conn *pgx.Conn) *AdPgRepo {
 	return &AdPgRepo{
-		conn: conn,
 		ctx:  context.Background(),
+		conn: conn,
 	}
 }
 
@@ -35,7 +35,7 @@ func (s *AdPgRepo) GetOne(id int) (*models.Ad, error) {
 	err := s.conn.QueryRow(s.ctx,
 		"SELECT title, price, photos, description FROM advertisements WHERE id = $1;", id).
 		Scan(&ad.Title, &ad.Price, &ad.Photos, &ad.Description)
-
+	
 	return ad, err
 }
 
@@ -57,7 +57,7 @@ func (s *AdPgRepo) GetAll(priceSort string, dateSort string, page int) ([]*model
 	var skipAds = adsPerPage * (page)
 	
 	rows, err := s.conn.Query(s.ctx,
-		"SELECT title, price, photos FROM advertisements WHERE id > $1"+orderQuery+" LIMIT 10",
+		"SELECT id, title, price, photos FROM advertisements WHERE id > $1"+orderQuery+" LIMIT 10",
 		skipAds)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (s *AdPgRepo) GetAll(priceSort string, dateSort string, page int) ([]*model
 	adsArr := make([]*models.Ad, 0, 10)
 	for rows.Next() {
 		ad := &models.Ad{}
-		err = rows.Scan(&ad.Title, &ad.Price, &ad.Photos)
+		err = rows.Scan(&ad.Id, &ad.Title, &ad.Price, &ad.Photos)
 		if err != nil {
 			return nil, err
 		}
