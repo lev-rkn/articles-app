@@ -13,7 +13,7 @@ import (
 
 func TestGetOne(t *testing.T) {
 
-	input := &models.Ad{
+	testAd := &models.Ad{
 		Id:          1,
 		Title:       "title",
 		Price:       100,
@@ -22,33 +22,33 @@ func TestGetOne(t *testing.T) {
 	}
 
 	testCases := []struct {
-		name         string
-		expectations func(userRepo *mocks.AdRepo)
-		input        *models.Ad
-		err          error
+		name       string
+		mockExpect func(userRepo *mocks.AdRepo)
+		testAd     *models.Ad
+		err        error
 	}{
 		{
 			name: "объявление найдено",
-			expectations: func(userRepo *mocks.AdRepo) {
-				userRepo.On("GetOne", input.Id).Return(input, nil)
+			mockExpect: func(userRepo *mocks.AdRepo) {
+				userRepo.On("GetOne", testAd.Id).Return(testAd, nil)
 			},
-			input: input,
-			err:   nil,
+			testAd: testAd,
+			err:    nil,
 		},
 		{
 			name: "объявление не найдено",
-			expectations: func(userRepo *mocks.AdRepo) {
-				userRepo.On("GetOne", input.Id).Return(nil, pgx.ErrNoRows)
+			mockExpect: func(userRepo *mocks.AdRepo) {
+				userRepo.On("GetOne", testAd.Id).Return(nil, pgx.ErrNoRows)
 			},
-			input: input,
-			err:   errAdNotFound,
+			testAd: testAd,
+			err:    errAdNotFound,
 		},
 		{name: "Получена любая другая ошибка",
-			expectations: func(userRepo *mocks.AdRepo) {
-				userRepo.On("GetOne", input.Id).Return(nil, errors.New("some error"))
+			mockExpect: func(userRepo *mocks.AdRepo) {
+				userRepo.On("GetOne", testAd.Id).Return(nil, errors.New("some error"))
 			},
-			input: input,
-			err:   errors.New("some error"),
+			testAd: testAd,
+			err:    errors.New("some error"),
 		},
 	}
 
@@ -58,10 +58,122 @@ func TestGetOne(t *testing.T) {
 			repository := &repository.Repository{Ad: mockAdRepo}
 			service := NewService(repository)
 
-			testCase.expectations(mockAdRepo)
-			_, err := service.Ad.GetOne(input.Id)
+			testCase.mockExpect(mockAdRepo)
+			_, err := service.Ad.GetOne(testAd.Id)
 
 			assert.Equal(t, testCase.err, err)
+		})
+	}
+}
+
+func TestCreate(t *testing.T) {
+	testAd := &models.Ad{
+		Title:       "title",
+		Price:       100,
+		Photos:      []string{"photo1", "photo2"},
+		Description: "description",
+	}
+	testId := 2
+
+	testCases := []struct {
+		name       string
+		mockExpect func(userRepo *mocks.AdRepo)
+		testAd     *models.Ad
+		returnedId int
+		err        error
+	}{
+		{
+			name: "Успешный кейс, валидный ввод",
+			mockExpect: func(userRepo *mocks.AdRepo) {
+				userRepo.On("Create", testAd).Return(testId, nil)
+			},
+			testAd:     testAd,
+			returnedId: testId,
+			err:        nil,
+		},
+		{
+			name: "Любая ошибка из базы",
+			mockExpect: func(userRepo *mocks.AdRepo) {
+				userRepo.On("Create", testAd).Return(0, errors.New("some error"))
+			},
+			testAd:     testAd,
+			returnedId: -1,
+			err:        errors.New("some error"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			mockAdRepo := &mocks.AdRepo{}
+			repository := &repository.Repository{Ad: mockAdRepo}
+			service := NewService(repository)
+
+			testCase.mockExpect(mockAdRepo)
+			id, err := service.Ad.Create(testAd)
+
+			assert.Equal(t, testCase.err, err)
+			assert.Equal(t, testCase.returnedId, id)
+		})
+	}
+}
+
+func TestGetAll(t *testing.T) {
+	var testAds []*models.Ad = []*models.Ad{
+		{
+			Id:          1,
+			Title:       "title",
+			Price:       100,
+			Photos:      []string{"photo1", "photo2"},
+			Description: "description",
+		},
+		{
+			Id:          2,
+			Title:       "title",
+			Price:       100,
+			Photos:      []string{"photo1", "photo2"},
+			Description: "description",
+		},
+	}
+	testPriceSort := "price asc"
+	testDateSort := "date desc"
+	testPageNumber := 1
+
+	testCases := []struct {
+		name        string
+		mockExpect  func(userRepo *mocks.AdRepo)
+		expectedAds []*models.Ad
+		err         error
+	}{
+		{
+			name: "Успешный кейс, валидный ввод",
+			mockExpect: func(userRepo *mocks.AdRepo) {
+				userRepo.On("GetAll", testPriceSort, testDateSort, testPageNumber).Return(testAds, nil)
+			},
+			expectedAds: testAds,
+			err:         nil,
+		},
+		{
+			name: "Любая ошибка из базы",
+			mockExpect: func(userRepo *mocks.AdRepo) {
+				userRepo.On("GetAll", testPriceSort, testDateSort, testPageNumber).
+					Return(nil, errors.New("some error"))
+			},
+			expectedAds: nil,
+			err:         errors.New("some error"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			mockAdRepo := &mocks.AdRepo{}
+			repository := &repository.Repository{Ad: mockAdRepo}
+			service := NewService(repository)
+
+			testCase.mockExpect(mockAdRepo)
+			ads, err := service.Ad.GetAll(testPriceSort, testDateSort, testPageNumber)
+
+			assert.Equal(t, testCase.err, err)
+			assert.Equal(t, testCase.expectedAds, ads)
 		})
 	}
 }
