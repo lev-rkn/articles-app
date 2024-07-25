@@ -11,7 +11,6 @@ import (
 
 type adService struct {
 	repository *repository.Repository
-	logger     *slog.Logger
 }
 
 var _ AdServiceInterface = (*adService)(nil)
@@ -24,7 +23,7 @@ var (
 func (s *adService) GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error) {
 	ads, err := s.repository.Ad.GetAll(priceSort, dateSort, page)
 	if err != nil {
-		slog.Error("unable to get ads", "err", err.Error())
+		slog.Error("service.ad.GetAll", "err", err.Error())
 		return nil, err
 	}
 
@@ -34,7 +33,7 @@ func (s *adService) GetAll(priceSort string, dateSort string, page int) ([]*mode
 func (s *adService) Create(ad *models.Ad) (int, error) {
 	id, err := s.repository.Ad.Create(ad)
 	if err != nil {
-		slog.Error("unable to create ad", "err", err.Error())
+		slog.Error("service.ad.Create", "err", err.Error())
 		return -1, err
 	}
 
@@ -49,7 +48,7 @@ func (s *adService) GetOne(id int) (*models.Ad, error) {
 	}
 
 	if err != nil {
-		slog.Error("unable to get ad", "err", err.Error())
+		slog.Error("service.ad.GetOne", "err", err.Error())
 		return nil, err
 	}
 
