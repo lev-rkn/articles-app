@@ -1,5 +1,3 @@
-# pg address for docker-compose
-# postgres://postgres:postgres@postgres/ads-service?sslmode=disable
-pg_url: postgres://postgres:postgres@localhost:5432/ads-service?sslmode=disable
+pg_url: postgres://postgres:postgres@postgres/ads-service?sslmode=disable
 migrations_dir: file://internal/store/migrations
-http_server_address: localhost:8080
+http_server_address: 0.0.0.0:8080
