@@ -18,8 +18,9 @@ type Repository struct {
 }
 
 func NewRepository(cfg *koanf.Koanf) *Repository {
+	pgUrl := cfg.String("pg_url")
 	// подключение к postgres
-	conn, err := pgx.Connect(context.Background(), cfg.String("pg_url"))
+	conn, err := pgx.Connect(context.Background(), pgUrl)
 	if err != nil {
 
 		slog.Error("Unable to connect to database",
@@ -27,7 +28,7 @@ func NewRepository(cfg *koanf.Koanf) *Repository {
 	}
 
 	// запуск миграций
-	m, err := migrate.New(cfg.String("migrations_dir"), cfg.String("pg_url"))
+	m, err := migrate.New(cfg.String("migrations_dir"), pgUrl)
 	if err != nil {
 		slog.Error("new migrations",
 			"err", err.Error())

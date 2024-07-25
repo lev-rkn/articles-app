@@ -32,13 +32,13 @@ func (s *adService) GetAll(priceSort string, dateSort string, page int) ([]*mode
 }
 
 func (s *adService) Create(ad *models.Ad) (int, error) {
-	int, err := s.repository.Ad.Create(ad)
+	id, err := s.repository.Ad.Create(ad)
 	if err != nil {
 		slog.Error("unable to create ad", "err", err.Error())
 		return -1, err
 	}
 
-	return int, nil
+	return id, nil
 }
 
 func (s *adService) GetOne(id int) (*models.Ad, error) {

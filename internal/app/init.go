@@ -17,9 +17,6 @@ import (
 func Initialization() {
 	// Иницилизация логгера
 	logger.Init()
-	if err := recover(); err != nil {
-		slog.Error("panic", "err", err)
-	}
 
 	// Иницилизация конфига
 	cfg := config.New()

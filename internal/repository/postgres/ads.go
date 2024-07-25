@@ -57,15 +57,15 @@ func (s *AdPgRepo) GetAll(priceSort string, dateSort string, page int) ([]*model
 	var skipAds = adsPerPage * (page)
 	
 	rows, err := s.conn.Query(s.ctx,
-		"SELECT id, title, price, photos FROM advertisements WHERE id > $1"+orderQuery+" LIMIT 10",
-		skipAds)
+		"SELECT id, title, price, photos FROM advertisements WHERE id > $1"+orderQuery+" LIMIT $2;",
+		skipAds, adsPerPage)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	// Перекладывание всех объектов объявлений в массив
-	adsArr := make([]*models.Ad, 0, 10)
+	adsArr := make([]*models.Ad, 0, adsPerPage)
 	for rows.Next() {
 		ad := &models.Ad{}
 		err = rows.Scan(&ad.Id, &ad.Title, &ad.Price, &ad.Photos)
