@@ -17,23 +17,23 @@ type Repository struct {
 	Ad AdRepo
 }
 
-func NewRepository(logger *slog.Logger, cfg *koanf.Koanf) *Repository {
+func NewRepository(cfg *koanf.Koanf) *Repository {
 	// подключение к postgres
 	conn, err := pgx.Connect(context.Background(), cfg.String("pg_url"))
 	if err != nil {
 
-		logger.Error("Unable to connect to database",
+		slog.Error("Unable to connect to database",
 			"err", err.Error())
 	}
 
 	// запуск миграций
 	m, err := migrate.New(cfg.String("migrations_dir"), cfg.String("pg_url"))
 	if err != nil {
-		logger.Error("new migrations",
+		slog.Error("new migrations",
 			"err", err.Error())
 	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		logger.Error("migrations up",
+		slog.Error("migrations up",
 			"err", err.Error())
 	}
 

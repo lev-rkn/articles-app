@@ -24,7 +24,7 @@ var (
 func (s *adService) GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error) {
 	ads, err := s.repository.Ad.GetAll(priceSort, dateSort, page)
 	if err != nil {
-		s.logger.Error("unable to get ads", "err", err.Error())
+		slog.Error("unable to get ads", "err", err.Error())
 		return nil, err
 	}
 
@@ -34,7 +34,7 @@ func (s *adService) GetAll(priceSort string, dateSort string, page int) ([]*mode
 func (s *adService) Create(ad *models.Ad) (int, error) {
 	int, err := s.repository.Ad.Create(ad)
 	if err != nil {
-		s.logger.Error("unable to create ad", "err", err.Error())
+		slog.Error("unable to create ad", "err", err.Error())
 		return -1, err
 	}
 
@@ -49,7 +49,7 @@ func (s *adService) GetOne(id int) (*models.Ad, error) {
 	}
 
 	if err != nil {
-		s.logger.Error("unable to get ad", "err", err.Error())
+		slog.Error("unable to get ad", "err", err.Error())
 		return nil, err
 	}
 

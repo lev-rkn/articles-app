@@ -4,7 +4,6 @@ import (
 	"ads-service/internal/models"
 	"ads-service/internal/repository"
 	"ads-service/internal/repository/mocks"
-	"ads-service/logger"
 	"errors"
 	"testing"
 
@@ -55,10 +54,9 @@ func TestGetOne(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			logger := logger.New()
 			mockAdRepo := &mocks.AdRepo{}
 			repository := &repository.Repository{Ad: mockAdRepo}
-			service := NewService(repository, logger)
+			service := NewService(repository)
 
 			testCase.expectations(mockAdRepo)
 			_, err := service.Ad.GetOne(input.Id)

@@ -3,7 +3,6 @@ package services
 import (
 	"ads-service/internal/models"
 	"ads-service/internal/repository"
-	"log/slog"
 )
 
 type AdServiceInterface interface {
@@ -18,9 +17,8 @@ type Service struct {
 
 func NewService(
 	repository *repository.Repository,
-	logger *slog.Logger,
 ) *Service {
 	return &Service{
-		Ad: &adService{repository: repository, logger: logger},
+		Ad: &adService{repository: repository},
 	}
 }

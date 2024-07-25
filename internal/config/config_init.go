@@ -10,17 +10,17 @@ import (
 	"github.com/knadh/koanf/v2"
 )
 
-func New(logger *slog.Logger) *koanf.Koanf {
+func New() *koanf.Koanf {
 	err := godotenv.Load()
 	if err != nil {
-		logger.Info("loading .env file", "err", err.Error())
+		slog.Info("loading .env file", "err", err.Error())
 	}
-	logger.Info("env_type: " + os.Getenv("ENV_TYPE"))
+	slog.Info("env_type: " + os.Getenv("ENV_TYPE"))
 
 	var k = koanf.New(".")
 	configYamlPath := "config/" + os.Getenv("ENV_TYPE") + ".yaml"
 	if err := k.Load(file.Provider(configYamlPath), yaml.Parser()); err != nil {
-		logger.Error("loading config",
+		slog.Error("loading config",
 			"err", err.Error())
 	}
 

@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"ads-service/internal/models"
-	"ads-service/internal/service"
+	services "ads-service/internal/service"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -14,19 +14,16 @@ import (
 
 type adController struct {
 	service *services.Service
-	ctx       context.Context
-	logger    *slog.Logger
+	ctx     context.Context
 }
 
 func NewAdController(
 	ctx context.Context,
 	service *services.Service,
-	logger *slog.Logger,
 ) *adController {
 	return &adController{
-		ctx:       ctx,
+		ctx:     ctx,
 		service: service,
-		logger:    logger,
 	}
 }
 
@@ -34,26 +31,26 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 	ad := &models.Ad{}
 	err := json.NewDecoder(r.Body).Decode(&ad)
 	if err != nil {
-		h.logger.Error("unable to decode ad", "err", err.Error())
+		slog.Error("unable to decode ad", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	// проверка, что длина заголовка от 1 до 200
 	if len(ad.Title) > 0 || utf8.RuneCountInString(ad.Title) > 200 {
-		h.logger.Error("invalid title", "title", ad.Title)
+		slog.Error("invalid title", "title", ad.Title)
 		http.Error(w, "Длина заголовка должна быть длиной от 1 до 200 симоволов", http.StatusBadRequest)
 		return
 	}
 	// проверка, что длина описания не должна превышать 1000 символов
 	if utf8.RuneCountInString(ad.Description) > 1000 {
-		h.logger.Error("invalid description", "description", ad.Description)
+		slog.Error("invalid description", "description", ad.Description)
 		http.Error(w, "Длина описания должна быть длиной до 1000 симоволов", http.StatusBadRequest)
 		return
 	}
 	// проверка, что нельзя загрузить больше чем 3 ссылки на фото
 	if len(ad.Photos) > 3 {
-		h.logger.Error("invalid photos", "photos", ad.Photos)
+		slog.Error("invalid photos", "photos", ad.Photos)
 		http.Error(w, "Нельзя загрузить больше чем 3 ссылки на фото", http.StatusBadRequest)
 		return
 	}
@@ -76,7 +73,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 	// проверка, что номер страницы является целочисленным значением
 	pageN, err := strconv.Atoi(page)
 	if err != nil {
-		h.logger.Error("unable to parse page number", "err", err.Error())
+		slog.Error("unable to parse page number", "err", err.Error())
 		http.Error(w, "Невалидный номер страницы", http.StatusBadRequest)
 		return
 	}
@@ -86,7 +83,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 		if price == "asc" || price == "desc" {
 			price = "price " + price
 		} else {
-			h.logger.Error("Invalid price query parameter: " + price)
+			slog.Error("Invalid price query parameter: " + price)
 			http.Error(w, "Invalid price query parameter: "+price, http.StatusBadRequest)
 			return
 		}
@@ -97,7 +94,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 		if date == "asc" || date == "desc" {
 			date = "date " + date
 		} else {
-			h.logger.Error("Invalid date query parameter: " + date)
+			slog.Error("Invalid date query parameter: " + date)
 			http.Error(w, "Invalid date query parameter: "+date, http.StatusBadRequest)
 			return
 		}
@@ -111,7 +108,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 
 	marshalled, err := json.Marshal(adsArr)
 	if err != nil {
-		h.logger.Error("adsArr marshalling", "err", err.Error())
+		slog.Error("adsArr marshalling", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -124,7 +121,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 func (h *adController) GetOne(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
-		h.logger.Error("unable to parse id", "err", err.Error())
+		slog.Error("unable to parse id", "err", err.Error())
 		http.Error(w, "Invalid id", http.StatusBadRequest)
 		return
 	}
@@ -137,7 +134,7 @@ func (h *adController) GetOne(w http.ResponseWriter, r *http.Request) {
 
 	marshalled, err := json.Marshal(ad)
 	if err != nil {
-		h.logger.Error("ad marshalling", "err", err.Error())
+		slog.Error("ad marshalling", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

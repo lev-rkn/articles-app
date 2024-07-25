@@ -4,9 +4,10 @@ import (
 	"ads-service/internal/config"
 	"ads-service/internal/controllers"
 	"ads-service/internal/repository"
-	services "ads-service/internal/service"
+	"ads-service/internal/service"
 	"ads-service/logger"
 	"context"
+	"log/slog"
 
 	"net/http"
 
@@ -15,29 +16,29 @@ import (
 
 func Initialization() {
 	// Иницилизация логгера
-	logger := logger.New()
+	logger.Init()
 	if err := recover(); err != nil {
-		logger.Error("panic", "err", err)
+		slog.Error("panic", "err", err)
 	}
 
 	// Иницилизация конфига
-	cfg := config.New(logger)
+	cfg := config.New()
 
 	// Иницилизация хранилища
-	repository := repository.NewRepository(logger, cfg)
+	repository := repository.NewRepository(cfg)
 
 	// Новый конкекст
 	ctx := context.Background()
 
 	// Иницилизация контроллеров
-	router := controllers.New(ctx, services.NewService(repository, logger), logger)
+	router := controllers.New(ctx, services.NewService(repository))
 
 	// Запуск сервера
 	serverAddr := cfg.String("http_server_address")
-	logger.Info("starting server at port: " + serverAddr)
-	
+	slog.Info("starting server at port: " + serverAddr)
+
 	if err := http.ListenAndServe(serverAddr, router); err != nil {
-		logger.Error("unable to start server", "err", err.Error())
+		slog.Error("unable to start server", "err", err.Error())
 		return
 	}
 }
