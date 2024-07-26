@@ -4,17 +4,20 @@ import (
 	"ads-service/internal/models"
 	"context"
 	"strings"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type AdRepo struct {
 	ctx  context.Context
-	conn PgConn
+	conn *pgx.Conn
 }
+
 var _ AdRepoInterface = (*AdRepo)(nil)
 
-func NewAdRepo(ctx context.Context,conn PgConn) *AdRepo {
+func NewAdRepo(ctx context.Context, conn *pgx.Conn) *AdRepo {
 	return &AdRepo{
-		ctx:  context.Background(),
+		ctx:  ctx,
 		conn: conn,
 	}
 }
