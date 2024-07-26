@@ -156,8 +156,8 @@ func TestGetOneAd(t *testing.T) {
 			code:         http.StatusOK,
 		},
 		{
-			name: "Невалидный идентификатор объявления",
-			mockExpect: func(adService *mocks.AdServiceInterface) {},
+			name:         "Невалидный идентификатор объявления",
+			mockExpect:   func(adService *mocks.AdServiceInterface) {},
 			id:           "y",
 			expectOutput: testAd,
 			err:          ErrInvalidId.Error() + "\n",
@@ -208,6 +208,106 @@ func TestGetOneAd(t *testing.T) {
 			// проверка соответствия кода ответа
 			assert.Equal(t, test.code, w.Code)
 			// проверка, что ожадаемое моком поведение в точности выполнено
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+func TestGetAllAds(t *testing.T) {
+	// добавить инициализацию логгера, чтобы логировать в файл
+	testAds := []*models.Ad{
+		{
+			Title:       "title",
+			Description: "description",
+			Price:       100,
+			Photos:      []string{"photo1", "photo2"},
+		},
+		{
+			Title:       "title321",
+			Description: "description321",
+			Price:       100312,
+			Photos:      []string{"photo13451", "phodsfvto2"},
+		},
+	}
+
+	tests := []struct {
+		name         string
+		mockExpect   func(adService *mocks.AdServiceInterface)
+		expectOutput []*models.Ad
+		queryParams  map[string]string
+		err          string
+		code         int
+	}{
+		{
+			name: "Валидный кейс, все параметры присутствуют",
+			mockExpect: func(adService *mocks.AdServiceInterface) {
+				adService.On("GetAll", "price asc", "date desc", 1).Return(testAds, nil)
+			},
+			expectOutput: testAds,
+			queryParams:  map[string]string{"page": "1", "price": "asc", "date": "desc"},
+			code:         http.StatusOK,
+		},
+		{
+			name:         "Невалидный номер страницы",
+			mockExpect:   func(adService *mocks.AdServiceInterface) {},
+			expectOutput: testAds,
+			queryParams:  map[string]string{"page": "j", "price": "asc", "date": "desc"},
+			err:          ErrInvalidPageNumber.Error() + "\n",
+			code:         http.StatusBadRequest,
+		},
+		{
+			name:         "Невалидный параметр валидации по цене",
+			mockExpect:   func(adService *mocks.AdServiceInterface) {},
+			expectOutput: testAds,
+			queryParams:  map[string]string{"page": "1", "price": "hello,world", "date": "desc"},
+			err:          ErrInvalidPriceSort.Error() + "\n",
+			code:         http.StatusBadRequest,
+		},
+		{
+			name:         "Невалидный параметр валидации по дате",
+			mockExpect:   func(adService *mocks.AdServiceInterface) {},
+			expectOutput: testAds,
+			queryParams:  map[string]string{"page": "1", "price": "asc", "date": ""},
+			err:          ErrInvalidDateSort.Error() + "\n",
+			code:         http.StatusBadRequest,
+		},
+		{
+			name: "Любая ошибка в сервисе",
+			mockExpect: func(adService *mocks.AdServiceInterface) {
+				adService.On("GetAll", "", "", 1).Return(nil, errors.New("some error"))
+			},
+			queryParams:  map[string]string{"page": "1"},
+			err:          "some error\n",
+			code: http.StatusInternalServerError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
+			mockService := &mocks.AdServiceInterface{}
+			mux := http.NewServeMux()
+			adController := InitAdController(ctx, mockService, mux)
+
+			// Создаем тестовый запрос и добавляем туда query параметры
+			req, _ := http.NewRequest("GET", "/ad/all/", strings.NewReader(""))
+			query := req.URL.Query()
+			for k, v := range test.queryParams {
+				query.Add(k, v)
+			}
+			req.URL.RawQuery = query.Encode()
+
+			// создаем обработчик, добавляем моку ожидание и вызываем тестируемую функцию
+			w := httptest.NewRecorder()
+			test.mockExpect(mockService)
+			adController.GetAll(w, req)
+
+			if test.err != "" {
+				assert.Equal(t, test.err, w.Body.String())
+			} else {
+				marshalled, _ := json.Marshal(test.expectOutput)
+				assert.Equal(t, marshalled, w.Body.Bytes())
+			}
+			assert.Equal(t, test.code, w.Code)
 			mockService.AssertExpectations(t)
 		})
 	}
