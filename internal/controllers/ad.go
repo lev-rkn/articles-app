@@ -14,29 +14,37 @@ import (
 )
 
 type adController struct {
-	service *services.Service
-	ctx     context.Context
+	ctx       context.Context
+	adService services.AdServiceInterface
+	mux       *http.ServeMux
 }
 
-func NewAdController(
+func InitAdController(
 	ctx context.Context,
-	service *services.Service,
+	adService services.AdServiceInterface,
+	mux *http.ServeMux,
 ) *adController {
-	return &adController{
-		ctx:     ctx,
-		service: service,
+	adController := &adController{
+		ctx:       ctx,
+		adService: adService,
+		mux:       mux,
 	}
+	mux.HandleFunc("POST /ad/create/", adController.Create)
+	mux.HandleFunc("GET /ad/all/", adController.GetAll)
+	mux.HandleFunc("GET /ad/{id}", adController.GetOne)
+
+	return adController
 }
 
 var (
-	ErrEmptyTitle = errors.New("заголовок не может быть пустым")
-	ErrInvalidTitle = errors.New("длина заголовка должна превышать 200 символов")
+	ErrEmptyTitle         = errors.New("заголовок не может быть пустым")
+	ErrInvalidTitle       = errors.New("длина заголовка должна превышать 200 символов")
 	ErrInvalidDescription = errors.New("длина описания не должна превышать 1000 симоволов")
-	ErrInvalidPhotos = errors.New("нельзя загрузить больше чем 3 ссылки на фото")
-	ErrInvalidPageNumber = errors.New("невалидный номер страницы")
-	ErrInvalidPriceSort = errors.New("невалидный параметр сортировки по цене")
-	ErrInvalidDateSort = errors.New("невалидный параметр сортировки по дате")
-	ErrInvalidId = errors.New("невалидный идентификатор (id) объявления")
+	ErrInvalidPhotos      = errors.New("нельзя загрузить больше чем 3 ссылки на фото")
+	ErrInvalidPageNumber  = errors.New("невалидный номер страницы")
+	ErrInvalidPriceSort   = errors.New("невалидный параметр сортировки по цене")
+	ErrInvalidDateSort    = errors.New("невалидный параметр сортировки по дате")
+	ErrInvalidId          = errors.New("невалидный идентификатор (id) объявления")
 )
 
 func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +81,7 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, err := h.service.Ad.Create(ad)
+	id, err := h.adService.Create(ad)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -118,7 +126,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	adsArr, err := h.service.Ad.GetAll(price, date, pageN)
+	adsArr, err := h.adService.GetAll(price, date, pageN)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -144,7 +152,7 @@ func (h *adController) GetOne(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ad, err := h.service.Ad.GetOne(id)
+	ad, err := h.adService.GetOne(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

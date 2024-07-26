@@ -5,6 +5,7 @@ import (
 	"ads-service/internal/repository"
 )
 
+//go:generate mockery --name AdServiceInterface --output ./mocks
 type AdServiceInterface interface {
 	Create(ad *models.Ad) (int, error)
 	GetOne(id int) (*models.Ad, error)
