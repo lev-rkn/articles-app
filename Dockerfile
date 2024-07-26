@@ -8,7 +8,7 @@ RUN go mod download
 
 RUN go build -o ads-service cmd/main.go
 
-# Создаем второй этап для минимального runtime
+# Создаем второй этап для уменьшенного размера образа
 FROM alpine:3.20
 
 WORKDIR /app
