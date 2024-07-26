@@ -99,31 +99,116 @@ func TestCreateAd(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		// инициализация контекста
-		ctx := context.Background()
-		// инициализация мок-сервиса
-		mockService := &mocks.AdServiceInterface{}
-		// инициализация тестируемого контроллера
-		mux := http.NewServeMux()
-		adController := InitAdController(ctx, mockService, mux)
+		t.Run(test.name, func(t *testing.T) {
+			// инициализация контекста
+			ctx := context.Background()
+			// инициализация мок-сервиса
+			mockService := &mocks.AdServiceInterface{}
+			// инициализация тестируемого контроллера
+			mux := http.NewServeMux()
+			adController := InitAdController(ctx, mockService, mux)
 
-		// превращаем тестовое объявление в JSON
-		marshalled, _ := json.Marshal(test.ad)
-		// создаем тестовый запрос, который будем пихать в тестируемый контроллер
-		req, _ := http.NewRequest("POST", "/ad/create/", strings.NewReader(string(marshalled)))
-		// создаем подставной обработчик, который будет слушать ответ тестируемого контроллера
-		w := httptest.NewRecorder()
-		// саем моку ожидаемое поведение
-		test.mockExpect(mockService)
-		// запускаем тестируемый контроллер, который должен записать свой ответ в
-		// инициализированный выше подставной обработчик
-		adController.Create(w, req)
+			// превращаем тестовое объявление в JSON
+			marshalled, _ := json.Marshal(test.ad)
+			// создаем тестовый запрос, который будем пихать в тестируемый контроллер
+			req, _ := http.NewRequest("POST", "/ad/create/", strings.NewReader(string(marshalled)))
+			// создаем подставной обработчик, который будет слушать ответ тестируемого контроллера
+			w := httptest.NewRecorder()
+			// саем моку ожидаемое поведение
+			test.mockExpect(mockService)
+			// запускаем тестируемый контроллер, который должен записать свой ответ в
+			// инициализированный выше подставной обработчик
+			adController.Create(w, req)
 
-		// проверка соответствия кода ответа
-		assert.Equal(t, test.code, w.Code)
-		// проверка записи котроллера
-		assert.Equal(t, test.expectOutput, w.Body.String())
-		// проверка, что ожадаемое моком поведение в точности выполнено
-		mockService.AssertExpectations(t)
+			// проверка соответствия кода ответа
+			assert.Equal(t, test.code, w.Code)
+			// проверка записи котроллера
+			assert.Equal(t, test.expectOutput, w.Body.String())
+			// проверка, что ожадаемое моком поведение в точности выполнено
+			mockService.AssertExpectations(t)
+		})
+	}
+}
+func TestGetOneAd(t *testing.T) {
+	// добавить инициализацию логгера, чтобы логировать в файл
+	testAd := &models.Ad{
+		Title:       "title",
+		Description: "description",
+		Price:       100,
+		Photos:      []string{"photo1", "photo2"},
+	}
+
+	tests := []struct {
+		name         string
+		mockExpect   func(adService *mocks.AdServiceInterface)
+		id           string
+		expectOutput *models.Ad
+		err          string
+		code         int
+	}{
+		{
+			name: "Валидный кейс",
+			mockExpect: func(adService *mocks.AdServiceInterface) {
+				adService.On("GetOne", 5).Return(testAd, nil)
+			},
+			id:           "5",
+			expectOutput: testAd,
+			code:         http.StatusOK,
+		},
+		{
+			name: "Невалидный идентификатор объявления",
+			mockExpect: func(adService *mocks.AdServiceInterface) {},
+			id:           "y",
+			expectOutput: testAd,
+			err:          ErrInvalidId.Error() + "\n",
+			code:         http.StatusBadRequest,
+		},
+		{
+			name: "Любая ошибка из сервиса",
+			mockExpect: func(adService *mocks.AdServiceInterface) {
+				adService.On("GetOne", 5).Return(nil, errors.New("some error"))
+			},
+			id:           "5",
+			expectOutput: testAd,
+			err:          errors.New("some error").Error() + "\n",
+			code:         http.StatusInternalServerError,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// инициализация контекста
+			ctx := context.Background()
+			// инициализация мок-сервиса
+			mockService := &mocks.AdServiceInterface{}
+			// инициализация тестируемого контроллера
+			mux := http.NewServeMux()
+			adController := InitAdController(ctx, mockService, mux)
+
+			// создаем тестовый запрос, который будем пихать в тестируемый контроллер
+			req, _ := http.NewRequest("GET", "/ad/", strings.NewReader(""))
+			req.SetPathValue("id", test.id)
+			// создаем подставной обработчик, который будет слушать ответ тестируемого контроллера
+			w := httptest.NewRecorder()
+			// суём моку ожидаемое поведение
+			test.mockExpect(mockService)
+			// запускаем тестируемый контроллер, который должен записать свой ответ в
+			// инициализированный выше подставной обработчик
+			adController.GetOne(w, req)
+
+			// Если ожидается ошибка - проверяем ее
+			if test.err != "" {
+				assert.Equal(t, test.err, w.Body.String())
+			} else {
+				// Превращаем ожидаемый результат в JSON
+				marshalled, _ := json.Marshal(test.expectOutput)
+				// затем сверяем его с полученным
+				assert.Equal(t, marshalled, w.Body.Bytes())
+			}
+			// проверка соответствия кода ответа
+			assert.Equal(t, test.code, w.Code)
+			// проверка, что ожадаемое моком поведение в точности выполнено
+			mockService.AssertExpectations(t)
+		})
 	}
 }
