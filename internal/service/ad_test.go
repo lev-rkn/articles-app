@@ -23,13 +23,13 @@ func TestGetOne(t *testing.T) {
 
 	testCases := []struct {
 		name       string
-		mockExpect func(userRepo *mocks.AdRepo)
+		mockExpect func(userRepo *mocks.AdRepoInterface)
 		testAd     *models.Ad
 		err        error
 	}{
 		{
 			name: "объявление найдено",
-			mockExpect: func(userRepo *mocks.AdRepo) {
+			mockExpect: func(userRepo *mocks.AdRepoInterface) {
 				userRepo.On("GetOne", testAd.Id).Return(testAd, nil)
 			},
 			testAd: testAd,
@@ -37,14 +37,14 @@ func TestGetOne(t *testing.T) {
 		},
 		{
 			name: "объявление не найдено",
-			mockExpect: func(userRepo *mocks.AdRepo) {
+			mockExpect: func(userRepo *mocks.AdRepoInterface) {
 				userRepo.On("GetOne", testAd.Id).Return(nil, pgx.ErrNoRows)
 			},
 			testAd: testAd,
 			err:    errAdNotFound,
 		},
 		{name: "Получена любая другая ошибка",
-			mockExpect: func(userRepo *mocks.AdRepo) {
+			mockExpect: func(userRepo *mocks.AdRepoInterface) {
 				userRepo.On("GetOne", testAd.Id).Return(nil, errors.New("some error"))
 			},
 			testAd: testAd,
@@ -54,11 +54,11 @@ func TestGetOne(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			mockAdRepo := &mocks.AdRepo{}
-			repository := &repository.Repository{Ad: mockAdRepo}
+			mockAdRepoInterface := &mocks.AdRepoInterface{}
+			repository := &repository.Repository{Ad: mockAdRepoInterface}
 			service := NewService(repository)
 
-			testCase.mockExpect(mockAdRepo)
+			testCase.mockExpect(mockAdRepoInterface)
 			_, err := service.Ad.GetOne(testAd.Id)
 
 			assert.Equal(t, testCase.err, err)
@@ -77,14 +77,14 @@ func TestCreate(t *testing.T) {
 
 	testCases := []struct {
 		name       string
-		mockExpect func(userRepo *mocks.AdRepo)
+		mockExpect func(userRepo *mocks.AdRepoInterface)
 		testAd     *models.Ad
 		returnedId int
 		err        error
 	}{
 		{
 			name: "Успешный кейс, валидный ввод",
-			mockExpect: func(userRepo *mocks.AdRepo) {
+			mockExpect: func(userRepo *mocks.AdRepoInterface) {
 				userRepo.On("Create", testAd).Return(testId, nil)
 			},
 			testAd:     testAd,
@@ -93,7 +93,7 @@ func TestCreate(t *testing.T) {
 		},
 		{
 			name: "Любая ошибка из базы",
-			mockExpect: func(userRepo *mocks.AdRepo) {
+			mockExpect: func(userRepo *mocks.AdRepoInterface) {
 				userRepo.On("Create", testAd).Return(0, errors.New("some error"))
 			},
 			testAd:     testAd,
@@ -104,11 +104,11 @@ func TestCreate(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			mockAdRepo := &mocks.AdRepo{}
-			repository := &repository.Repository{Ad: mockAdRepo}
+			mockAdRepoInterface := &mocks.AdRepoInterface{}
+			repository := &repository.Repository{Ad: mockAdRepoInterface}
 			service := NewService(repository)
 
-			testCase.mockExpect(mockAdRepo)
+			testCase.mockExpect(mockAdRepoInterface)
 			id, err := service.Ad.Create(testAd)
 
 			assert.Equal(t, testCase.err, err)
@@ -140,13 +140,13 @@ func TestGetAll(t *testing.T) {
 
 	testCases := []struct {
 		name        string
-		mockExpect  func(userRepo *mocks.AdRepo)
+		mockExpect  func(userRepo *mocks.AdRepoInterface)
 		expectedAds []*models.Ad
 		err         error
 	}{
 		{
 			name: "Успешный кейс, валидный ввод",
-			mockExpect: func(userRepo *mocks.AdRepo) {
+			mockExpect: func(userRepo *mocks.AdRepoInterface) {
 				userRepo.On("GetAll", testPriceSort, testDateSort, testPageNumber).Return(testAds, nil)
 			},
 			expectedAds: testAds,
@@ -154,7 +154,7 @@ func TestGetAll(t *testing.T) {
 		},
 		{
 			name: "Любая ошибка из базы",
-			mockExpect: func(userRepo *mocks.AdRepo) {
+			mockExpect: func(userRepo *mocks.AdRepoInterface) {
 				userRepo.On("GetAll", testPriceSort, testDateSort, testPageNumber).
 					Return(nil, errors.New("some error"))
 			},
@@ -165,15 +165,17 @@ func TestGetAll(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			mockAdRepo := &mocks.AdRepo{}
-			repository := &repository.Repository{Ad: mockAdRepo}
+			mockAdRepoInterface := &mocks.AdRepoInterface{}
+			repository := &repository.Repository{Ad: mockAdRepoInterface}
 			service := NewService(repository)
 
-			testCase.mockExpect(mockAdRepo)
+			testCase.mockExpect(mockAdRepoInterface)
 			ads, err := service.Ad.GetAll(testPriceSort, testDateSort, testPageNumber)
 
 			assert.Equal(t, testCase.err, err)
 			assert.Equal(t, testCase.expectedAds, ads)
+			// проверка, что все ожидания мока (mockExpect) были верно выполнены
+			mockAdRepoInterface.AssertExpectations(t)
 		})
 	}
 }

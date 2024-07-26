@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"ads-service/internal/repository/postgres"
 	"context"
 	"log/slog"
 
@@ -14,10 +13,10 @@ import (
 )
 
 type Repository struct {
-	Ad AdRepo
+	Ad AdRepoInterface
 }
 
-func NewRepository(cfg *koanf.Koanf) *Repository {
+func NewRepository(ctx context.Context, cfg *koanf.Koanf) *Repository {
 	pgUrl := cfg.String("pg_url")
 	// подключение к postgres
 	conn, err := pgx.Connect(context.Background(), pgUrl)
@@ -26,7 +25,7 @@ func NewRepository(cfg *koanf.Koanf) *Repository {
 		slog.Error("Unable to connect to database",
 			"err", err.Error())
 	}
-
+	
 	// запуск миграций
 	m, err := migrate.New(cfg.String("migrations_dir"), pgUrl)
 	if err != nil {
@@ -39,7 +38,7 @@ func NewRepository(cfg *koanf.Koanf) *Repository {
 	}
 
 	var repository = &Repository{
-		Ad: postgres.NewAdPgRepo(conn),
+		Ad: NewAdRepo(ctx, conn),
 	}
 
 	return repository
