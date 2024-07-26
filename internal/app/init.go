@@ -21,11 +21,11 @@ func Initialization() {
 	// Иницилизация конфига
 	cfg := config.New()
 
-	// Иницилизация хранилища
-	repository := repository.NewRepository(cfg)
-
 	// Новый конкекст
 	ctx := context.Background()
+
+	// Иницилизация хранилища
+	repository := repository.NewRepository(ctx, cfg)
 
 	// Иницилизация контроллеров
 	router := controllers.New(ctx, services.NewService(repository))

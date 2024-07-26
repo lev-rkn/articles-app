@@ -1,26 +1,25 @@
-package postgres
+package repository
 
 import (
 	"ads-service/internal/models"
 	"context"
 	"strings"
-
-	"github.com/jackc/pgx/v5"
 )
 
-type AdPgRepo struct {
+type AdRepo struct {
 	ctx  context.Context
-	conn *pgx.Conn
+	conn PgConn
 }
+var _ AdRepoInterface = (*AdRepo)(nil)
 
-func NewAdPgRepo(conn *pgx.Conn) *AdPgRepo {
-	return &AdPgRepo{
+func NewAdRepo(ctx context.Context,conn PgConn) *AdRepo {
+	return &AdRepo{
 		ctx:  context.Background(),
 		conn: conn,
 	}
 }
 
-func (s *AdPgRepo) Create(ad *models.Ad) (int, error) {
+func (s *AdRepo) Create(ad *models.Ad) (int, error) {
 	var id int
 	err := s.conn.QueryRow(s.ctx,
 		"INSERT INTO advertisements (title, description, price, photos) VALUES ($1, $2, $3, $4) RETURNING id;",
@@ -29,17 +28,17 @@ func (s *AdPgRepo) Create(ad *models.Ad) (int, error) {
 	return id, err
 }
 
-func (s *AdPgRepo) GetOne(id int) (*models.Ad, error) {
+func (s *AdRepo) GetOne(id int) (*models.Ad, error) {
 	ad := &models.Ad{}
 
 	err := s.conn.QueryRow(s.ctx,
 		"SELECT title, price, photos, description FROM advertisements WHERE id = $1;", id).
 		Scan(&ad.Title, &ad.Price, &ad.Photos, &ad.Description)
-	
+
 	return ad, err
 }
 
-func (s *AdPgRepo) GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error) {
+func (s *AdRepo) GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error) {
 	// сборка строки сортировки по цене и по дате для запроса
 	var orderQuery string
 	sorts := make([]string, 0, 2)
@@ -55,7 +54,7 @@ func (s *AdPgRepo) GetAll(priceSort string, dateSort string, page int) ([]*model
 
 	const adsPerPage = 10
 	var skipAds = adsPerPage * (page)
-	
+
 	rows, err := s.conn.Query(s.ctx,
 		"SELECT id, title, price, photos FROM advertisements WHERE id > $1"+orderQuery+" LIMIT $2;",
 		skipAds, adsPerPage)
