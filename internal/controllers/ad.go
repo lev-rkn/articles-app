@@ -47,6 +47,15 @@ var (
 	ErrInvalidId          = errors.New("невалидный идентификатор (id) объявления")
 )
 
+// @Summary Создание объявления
+// @Tags ads
+// @Accept json
+// @Produce json
+// @Param ad body models.Ad true "Объявление"
+// @Success 201 {object} models.Ad
+// @Failure 400 {string} string "Bad Request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router			/ad/create/ [post]
 func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 	ad := &models.Ad{}
 	err := json.NewDecoder(r.Body).Decode(&ad)
@@ -92,6 +101,17 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`{"id": %d}`, id)))
 }
 
+// @Summary Получение страницы объявлений
+// @Tags ads
+// @Accept json
+// @Produce json
+// @Param page query int true "Номер страницы"
+// @Param price query string false "Сортировка по цене (asc, desc)"
+// @Param date query string false "Сортировка по дате (asc, desc)"
+// @Success 200 {object} models.Ad
+// @Failure 400 {string} string "Bad Request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router			/ad/all/ [get]
 func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	page, price, date := q.Get("page"), q.Get("price"), q.Get("date")
@@ -144,6 +164,15 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 	w.Write(marshalled)
 }
 
+// @Summary Получение одного объявления
+// @Tags ads
+// @Accept json
+// @Produce json
+// @Param id path int true "ID объявления"
+// @Success 200 {object} models.Ad
+// @Failure 400 {string} string "Bad Request"
+// @Failure 500 {string} string "Internal Server Error"
+// @Router			/ad/{id} [get]
 func (h *adController) GetOne(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
