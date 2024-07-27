@@ -12,7 +12,7 @@ import (
 
 func New() *koanf.Koanf {
 	err := godotenv.Load()
-	if err != nil {
+	if err != nil && os.Getenv("ENV_TYPE") == "" {
 		slog.Info("loading .env file", "err", err.Error())
 	}
 	slog.Info("env_type: " + os.Getenv("ENV_TYPE"))
