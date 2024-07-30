@@ -3,9 +3,9 @@ package app
 import (
 	"ads-service/internal/config"
 	"ads-service/internal/controllers"
+	"ads-service/internal/logger"
 	"ads-service/internal/repository"
 	"ads-service/internal/service"
-	"ads-service/logger"
 	"context"
 	"log/slog"
 
@@ -15,11 +15,11 @@ import (
 )
 
 func Initialization() {
-	// Иницилизация логгера
-	logger.Init()
-
 	// Иницилизация конфига
-	cfg := config.New()
+	cfg := config.MustLoad()
+	
+	// Иницилизация логгера
+	logger.MustLoad(cfg.CfgType)
 
 	// Новый конкекст
 	ctx := context.Background()
@@ -31,7 +31,7 @@ func Initialization() {
 	router := controllers.New(ctx, services.NewService(repository))
 
 	// Запуск сервера
-	serverAddr := cfg.String("http_server_address")
+	serverAddr := cfg.HTTPServerAddress
 	slog.Info("starting server at port: " + serverAddr)
 
 	if err := http.ListenAndServe(serverAddr, router); err != nil {

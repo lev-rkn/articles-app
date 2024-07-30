@@ -8,14 +8,18 @@ RUN go mod download
 
 RUN go build -o ads-service cmd/main.go
 
-# Создаем второй этап для уменьшенного размера образа
+# Creating an image from the builder stage with only the binary and files needed for running
 FROM alpine:3.20
 
 WORKDIR /app
 
-# Копируем папку config, migrations и исполняемый файл 
+# Copy binary 
 COPY --from=builder /app/ads-service .
+# Copy configs
 COPY --from=builder /app/config ./config
+# Copy .env, which contains configuration type
+COPY --from=builder /app/.env .
+# Copy migration files
 COPY --from=builder /app/migrations ./migrations
 
 CMD ["./ads-service"]

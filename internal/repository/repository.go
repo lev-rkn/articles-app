@@ -1,11 +1,11 @@
 package repository
 
 import (
+	"ads-service/internal/config"
 	"context"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/knadh/koanf/v2"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -16,10 +16,9 @@ type Repository struct {
 	Ad AdRepoInterface
 }
 
-func NewRepository(ctx context.Context, cfg *koanf.Koanf) *Repository {
-	pgUrl := cfg.String("pg_url")
+func NewRepository(ctx context.Context, cfg *config.Config) *Repository {
 	// подключение к postgres
-	conn, err := pgx.Connect(context.Background(), pgUrl)
+	conn, err := pgx.Connect(context.Background(), cfg.PgUrl)
 	if err != nil {
 
 		slog.Error("Unable to connect to database",
@@ -27,7 +26,7 @@ func NewRepository(ctx context.Context, cfg *koanf.Koanf) *Repository {
 	}
 	
 	// запуск миграций
-	m, err := migrate.New(cfg.String("migrations_dir"), pgUrl)
+	m, err := migrate.New(cfg.MigrationsDir, cfg.PgUrl)
 	if err != nil {
 		slog.Error("new migrations",
 			"err", err.Error())
