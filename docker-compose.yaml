@@ -10,6 +10,7 @@ services:
       - ENV_TYPE=docker
     depends_on:
       - postgres
+    restart: always
     networks:
       - app-network
 
