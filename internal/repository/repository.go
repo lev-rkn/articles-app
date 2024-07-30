@@ -2,6 +2,7 @@ package repository
 
 import (
 	"ads-service/internal/config"
+	"ads-service/internal/models"
 	"context"
 	"log/slog"
 
@@ -11,6 +12,14 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
+
+//go:generate mockery --name AdRepoInterface --output ./mocks
+type AdRepoInterface interface {
+	Create(ad *models.Ad) (int, error)
+	GetOne(id int) (*models.Ad, error)
+	GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error)
+}
+
 
 type Repository struct {
 	Ad AdRepoInterface
