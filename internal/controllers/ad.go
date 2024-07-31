@@ -3,6 +3,7 @@ package controllers
 import (
 	"ads-service/internal/models"
 	services "ads-service/internal/service"
+	"ads-service/metrics"
 	"context"
 	"encoding/json"
 	"errors"
@@ -57,8 +58,19 @@ var (
 // @Failure 500 {string} string "Internal Server Error"
 // @Router			/ad/create/ [post]
 func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
+	var err error
+	// собираем метрики
+	go metrics.CreateAdRequest.Inc()
+	defer func() {
+		if err == nil {
+			go metrics.CreateAdOK.Inc()
+		} else {
+			go metrics.CreateAdError.Inc()
+		}
+	}()
+
 	ad := &models.Ad{}
-	err := json.NewDecoder(r.Body).Decode(&ad)
+	err = json.NewDecoder(r.Body).Decode(&ad)
 	if err != nil {
 		slog.Error("unable to decode ad", "err", err.Error())
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -113,6 +125,17 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router			/ad/all/ [get]
 func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
+	var err error
+	// собираем метрики
+	go metrics.GetAdsRequest.Inc()
+	defer func() {
+		if err == nil {
+			go metrics.GetAdsOK.Inc()
+		} else {
+			go metrics.GetAdsError.Inc()
+		}
+	}()
+
 	q := r.URL.Query()
 	page, price, date := q.Get("page"), q.Get("price"), q.Get("date")
 
@@ -174,6 +197,17 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "Internal Server Error"
 // @Router			/ad/{id} [get]
 func (h *adController) GetOne(w http.ResponseWriter, r *http.Request) {
+	var err error
+	// собираем метрики
+	go metrics.GetAdRequest.Inc()
+	defer func() {
+		if err == nil {
+			go metrics.GetAdOK.Inc()
+		} else {
+			go metrics.GetAdError.Inc()
+		}
+	}()
+
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		slog.Error("unable to parse id", "err", err.Error())

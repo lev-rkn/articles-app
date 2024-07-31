@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	_ "ads-service/docs"
+
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/swaggo/http-swagger"
 )
 
@@ -22,13 +24,18 @@ import (
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host		localhost:8080
-func New(ctx context.Context, service *services.Service) *http.ServeMux {
+func New(ctx context.Context, service *services.Service) *http.ServeMux {	
 	mux := http.NewServeMux()
+
 	// swagger
 	mux.Handle("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
 	))
-	// Инициализация РОУТОВ объявлений
+	
+	// Метрики
+	mux.Handle("/metrics", promhttp.Handler())
+
+	// Инициализация Контроллера объявлений
 	InitAdController(ctx, service.Ad, mux)
 
 	return mux

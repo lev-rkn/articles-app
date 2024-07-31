@@ -3,9 +3,9 @@ package app
 import (
 	"ads-service/internal/config"
 	"ads-service/internal/controllers"
-	"ads-service/internal/logger"
 	"ads-service/internal/repository"
 	"ads-service/internal/service"
+	"ads-service/logger"
 	"context"
 	"log/slog"
 
