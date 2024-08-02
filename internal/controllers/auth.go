@@ -12,38 +12,38 @@ import (
 	"net/http"
 )
 
-type userController struct {
+type authController struct {
 	ctx        context.Context
 	mux        *http.ServeMux
 	authClient *auth.Client
 }
 
-func InitUserController(
+func InitAuthController(
 	ctx context.Context,
 	mux *http.ServeMux,
 	authClient *auth.Client,
-) *userController {
-	userController := &userController{
+) *authController {
+	authController := &authController{
 		ctx:        ctx,
 		mux:        mux,
 		authClient: authClient,
 	}
-	mux.HandleFunc("POST /user/create/", userController.Login)
-	mux.HandleFunc("POST /user/register/", userController.Register)
+	mux.HandleFunc("POST /user/create/", authController.Login)
+	mux.HandleFunc("POST /user/register/", authController.Register)
 
-	return userController
+	return authController
 }
 
-// @Summary Создание объявления
-// @Tags ads
+// @Summary Авторизация пользователя
+// @Tags auth
 // @Accept json
 // @Produce json
-// @Param ad body models.Ad true "Объявление"
-// @Success 201 {object} models.Ad
+// @Param user body models.User true "Почта и пароль пользователя"
+// @Success 200 {string} string "token" 
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router			/ad/create/ [post]
-func (c *userController) Login(w http.ResponseWriter, r *http.Request) {
+// @Router	/user/create/ [post]
+func (c *authController) Login(w http.ResponseWriter, r *http.Request) {
 	user := &models.User{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -69,18 +69,16 @@ func (c *userController) Login(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, res.GetToken())))
 }
 
-// @Summary Получение страницы объявлений
-// @Tags ads
+// @Summary Регистрация пользователя
+// @Tags auth
 // @Accept json
 // @Produce json
-// @Param page query int true "Номер страницы"
-// @Param price query string false "Сортировка по цене (asc, desc)"
-// @Param date query string false "Сортировка по дате (asc, desc)"
-// @Success 200 {object} models.Ad
+// @Param user body models.User true "Почта и пароль пользователя"
+// @Success 201 {string} int "id" 
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
-// @Router			/ad/all/ [get]
-func (c *userController) Register(w http.ResponseWriter, r *http.Request) {
+// @Router	/user/register/ [post]
+func (c *authController) Register(w http.ResponseWriter, r *http.Request) {
 	user := &models.User{}
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
@@ -99,7 +97,7 @@ func (c *userController) Register(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(fmt.Sprintf(`{"id": %d}`, res.GetUserId())))

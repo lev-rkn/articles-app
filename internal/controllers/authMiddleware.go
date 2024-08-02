@@ -16,7 +16,8 @@ var (
 	ErrFailedIsAdminCheck = errors.New("failed to check if user is admin")
 )
 
-
+// middleware, который проверяет jwt токен, лежащий в заголовке запроса, на валидность.
+// в токене лежит закодированный авторизованный пользователь
 func AuthMiddleware(
 	handlerFunc func(w http.ResponseWriter, r *http.Request),
 ) func(http.ResponseWriter, *http.Request) {
@@ -26,7 +27,7 @@ func AuthMiddleware(
 
 		// Парсим и валидируем токен, используя СЕКРЕТНЫЙ ключ
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
-			return []byte(config.Cfg.AuthGPRC.SecretKey), nil // TODO: может не работать
+			return []byte(config.Cfg.AuthGPRC.SecretKey), nil
 		})
 		if err != nil {
 			slog.Warn("failed to parse token", "err", err.Error())
@@ -47,10 +48,9 @@ func AuthMiddleware(
 	})
 }
 
-// // extractBearerToken extracts auth token from Authorization header.
+// Вынимает токен из заголовка запроса
 func extractBearerToken(r *http.Request) string {
 	authHeader := r.Header.Get("Authorization")
-	// TODO: left trim
 	splitToken := strings.Split(authHeader, "Bearer ")
 	if len(splitToken) != 2 {
 		return ""

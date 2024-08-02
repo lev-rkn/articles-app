@@ -40,8 +40,9 @@ func New(ctx context.Context, service *services.Service) *http.ServeMux {
 
 	// Инициализация Контроллера объявлений
 	InitAdController(ctx, service.Ad, mux)
+	// Инициализация контроллера аутентификации-авторизации
 	client, _ := auth.New(ctx, config.Cfg.AuthGPRC.Address, time.Second * 10, 3)
-	InitUserController(ctx, mux, client)
+	InitAuthController(ctx, mux, client)
 
 	return mux
 }

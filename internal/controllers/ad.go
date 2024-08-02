@@ -53,13 +53,13 @@ var (
 // @Accept json
 // @Produce json
 // @Param ad body models.Ad true "Объявление"
-// @Success 201 {object} models.Ad
+// @Success 201 {int} id
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router			/ad/create/ [post]
 func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 	go metrics.CreateAdRequest.Inc()
-
+	// проверяем наличие ошибки, возможно переданной нам через middleware
 	if v, ok := r.Context().Value("error").(error); ok {
 		if v != nil {
 			http.Error(w, v.Error(), http.StatusBadRequest)
@@ -127,7 +127,7 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 // @Param page query int true "Номер страницы"
 // @Param price query string false "Сортировка по цене (asc, desc)"
 // @Param date query string false "Сортировка по дате (asc, desc)"
-// @Success 200 {object} models.Ad
+// @Success 200 {array} models.Ad
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router			/ad/all/ [get]
