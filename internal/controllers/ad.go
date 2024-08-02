@@ -30,7 +30,7 @@ func InitAdController(
 		adService: adService,
 		mux:       mux,
 	}
-	mux.HandleFunc("POST /ad/create/", adController.Create)
+	mux.HandleFunc("POST /ad/create/", AuthMiddleware(adController.Create))
 	mux.HandleFunc("GET /ad/all/", adController.GetAll)
 	mux.HandleFunc("GET /ad/{id}", adController.GetOne)
 
@@ -58,9 +58,16 @@ var (
 // @Failure 500 {string} string "Internal Server Error"
 // @Router			/ad/create/ [post]
 func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
-	var err error
-	// собираем метрики
 	go metrics.CreateAdRequest.Inc()
+
+	if v, ok := r.Context().Value("error").(error); ok {
+		if v != nil {
+			http.Error(w, v.Error(), http.StatusBadRequest)
+			return
+		}
+	}
+
+	var err error
 	defer func() {
 		if err == nil {
 			go metrics.CreateAdOK.Inc()

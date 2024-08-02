@@ -16,22 +16,22 @@ import (
 
 func Initialization() {
 	// Иницилизация конфига
-	cfg := config.MustLoad()
+	config.MustLoad()
 	
 	// Иницилизация логгера
-	logger.MustLoad(cfg.CfgType)
+	logger.MustLoad()
 
 	// Новый конкекст
 	ctx := context.Background()
 
 	// Иницилизация хранилища
-	repository := repository.NewRepository(ctx, cfg)
+	repository := repository.NewRepository(ctx)
 
 	// Иницилизация контроллеров
 	router := controllers.New(ctx, services.NewService(repository))
 
 	// Запуск сервера
-	serverAddr := cfg.HTTPServerAddress
+	serverAddr := config.Cfg.HTTPServerAddress
 	slog.Info("starting server at port: " + serverAddr)
 
 	if err := http.ListenAndServe(serverAddr, router); err != nil {

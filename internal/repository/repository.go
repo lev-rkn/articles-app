@@ -25,9 +25,9 @@ type Repository struct {
 	Ad AdRepoInterface
 }
 
-func NewRepository(ctx context.Context, cfg *config.Config) *Repository {
+func NewRepository(ctx context.Context) *Repository {
 	// подключение к postgres
-	conn, err := pgx.Connect(context.Background(), cfg.PgUrl)
+	conn, err := pgx.Connect(context.Background(), config.Cfg.PgUrl)
 	if err != nil {
 
 		slog.Error("Unable to connect to database",
@@ -35,7 +35,7 @@ func NewRepository(ctx context.Context, cfg *config.Config) *Repository {
 	}
 	
 	// запуск миграций
-	m, err := migrate.New(cfg.MigrationsDir, cfg.PgUrl)
+	m, err := migrate.New(config.Cfg.MigrationsDir, config.Cfg.PgUrl)
 	if err != nil {
 		slog.Error("new migrations",
 			"err", err.Error())

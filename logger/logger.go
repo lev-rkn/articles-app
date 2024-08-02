@@ -1,12 +1,13 @@
 package logger
 
 import (
+	"ads-service/internal/config"
 	"io"
 	"log/slog"
 	"os"
 )
 
-func MustLoad(cfgType string) {
+func MustLoad() {
 	// writing logs to a logs.txt file
 	outfile, err := os.Create("logs.txt")
 	if err != nil {
@@ -15,7 +16,7 @@ func MustLoad(cfgType string) {
 
 	var logger *slog.Logger
 
-	switch cfgType {
+	switch config.Cfg.CfgType {
 	case "local":
 		logger = slog.New(slog.NewTextHandler(io.MultiWriter(outfile, os.Stdout),
 			&slog.HandlerOptions{Level: slog.LevelDebug}))
@@ -23,7 +24,7 @@ func MustLoad(cfgType string) {
 		logger = slog.New(slog.NewJSONHandler(io.MultiWriter(outfile, os.Stdout),
 			&slog.HandlerOptions{Level: slog.LevelInfo}))
 	default:
-		panic("logger, unknown cfg_type: " + cfgType)
+		panic("logger, unknown cfg_type: " + config.Cfg.CfgType)
 	}
 
 	slog.SetDefault(logger)

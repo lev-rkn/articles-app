@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"ads-service/internal/clients/grpc/auth"
+	"ads-service/internal/config"
 	"ads-service/internal/service"
 	"context"
 	"net/http"
+	"time"
 
 	_ "ads-service/docs"
 
@@ -37,6 +40,8 @@ func New(ctx context.Context, service *services.Service) *http.ServeMux {
 
 	// Инициализация Контроллера объявлений
 	InitAdController(ctx, service.Ad, mux)
+	client, _ := auth.New(ctx, config.Cfg.AuthGPRC.Address, time.Second * 10, 3)
+	InitUserController(ctx, mux, client)
 
 	return mux
 }
