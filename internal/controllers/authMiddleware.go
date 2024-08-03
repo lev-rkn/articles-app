@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"ads-service/internal/config"
+	"ads-service/internal/lib/types"
 	"context"
-	"errors"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -11,13 +11,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var (
-	ErrInvalidToken       = errors.New("invalid token")
-	ErrFailedIsAdminCheck = errors.New("failed to check if user is admin")
-)
-
 // middleware, который проверяет jwt токен, лежащий в заголовке запроса, на валидность.
-// в токене лежит закодированный авторизованный пользователь
+// в токене лежит закодированный аутентифицированный пользователь
 func AuthMiddleware(
 	handlerFunc func(w http.ResponseWriter, r *http.Request),
 ) func(http.ResponseWriter, *http.Request) {
@@ -32,7 +27,7 @@ func AuthMiddleware(
 		if err != nil {
 			slog.Warn("failed to parse token", "err", err.Error())
 
-			ctx := context.WithValue(r.Context(), "error", ErrInvalidToken)
+			ctx := context.WithValue(r.Context(), types.KeyError, types.ErrInvalidToken)
 			handlerFunc(w, r.WithContext(ctx))
 
 			return
@@ -42,7 +37,7 @@ func AuthMiddleware(
 
 		// Полученны данные сохраняем в контекст,
 		// откуда его смогут получить следующие хэндлеры.
-		ctx := context.WithValue(r.Context(), "user", token)
+		ctx := context.WithValue(r.Context(), types.KeyUser, token)
 
 		handlerFunc(w, r.WithContext(ctx))
 	})

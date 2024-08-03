@@ -34,7 +34,7 @@ func InitAuthController(
 	return authController
 }
 
-// @Summary Авторизация пользователя
+// @Summary Аутентификация пользователя
 // @Tags auth
 // @Accept json
 // @Produce json

@@ -1,9 +1,9 @@
 package services
 
 import (
+	"ads-service/internal/lib/types"
 	"ads-service/internal/models"
 	"ads-service/internal/repository"
-	"errors"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
@@ -15,13 +15,9 @@ type adService struct {
 
 var _ AdServiceInterface = (*adService)(nil)
 
-// Ошибки
-var (
-	errAdNotFound = errors.New("ad not found")
-)
-
-func (s *adService) GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error) {
-	ads, err := s.repository.Ad.GetAll(priceSort, dateSort, page)
+func (s *adService) GetAll(priceSort string, dateSort string, page int, userId int,
+	) ([]*models.Ad, error) {
+	ads, err := s.repository.Ad.GetAll(priceSort, dateSort, page, userId)
 	if err != nil {
 		slog.Error("service.ad.GetAll", "err", err.Error())
 		return nil, err
@@ -44,7 +40,7 @@ func (s *adService) GetOne(id int) (*models.Ad, error) {
 	ad, err := s.repository.Ad.GetOne(id)
 
 	if err == pgx.ErrNoRows {
-		return nil, errAdNotFound
+		return nil, types.ErrAdNotFound
 	}
 
 	if err != nil {

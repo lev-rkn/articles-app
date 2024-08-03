@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"ads-service/internal/lib/types"
 	"ads-service/internal/models"
 	"ads-service/internal/service/mocks"
 	"context"
@@ -48,7 +49,7 @@ func TestCreateAd(t *testing.T) {
 				Description: testAd.Description,
 				Price:       testAd.Price,
 			},
-			expectOutput: ErrInvalidTitle.Error() + "\n",
+			expectOutput: types.ErrInvalidTitle.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{
@@ -60,7 +61,7 @@ func TestCreateAd(t *testing.T) {
 				Description: testAd.Description,
 				Price:       testAd.Price,
 			},
-			expectOutput: ErrEmptyTitle.Error() + "\n",
+			expectOutput: types.ErrEmptyTitle.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{
@@ -72,7 +73,7 @@ func TestCreateAd(t *testing.T) {
 				Description: strings.Repeat("a", 1001),
 				Price:       testAd.Price,
 			},
-			expectOutput: ErrInvalidDescription.Error() + "\n",
+			expectOutput: types.ErrInvalidDescription.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{
@@ -84,7 +85,7 @@ func TestCreateAd(t *testing.T) {
 				Description: testAd.Description,
 				Price:       testAd.Price,
 			},
-			expectOutput: ErrInvalidPhotos.Error() + "\n",
+			expectOutput: types.ErrInvalidPhotos.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{
@@ -160,7 +161,7 @@ func TestGetOneAd(t *testing.T) {
 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
 			id:           "y",
 			expectOutput: testAd,
-			err:          ErrInvalidId.Error() + "\n",
+			err:          types.ErrInvalidId.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{
@@ -251,7 +252,7 @@ func TestGetAllAds(t *testing.T) {
 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
 			expectOutput: testAds,
 			queryParams:  map[string]string{"page": "j", "price": "asc", "date": "desc"},
-			err:          ErrInvalidPageNumber.Error() + "\n",
+			err:          types.ErrInvalidPageNumber.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{
@@ -259,7 +260,7 @@ func TestGetAllAds(t *testing.T) {
 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
 			expectOutput: testAds,
 			queryParams:  map[string]string{"page": "1", "price": "hello,world", "date": "desc"},
-			err:          ErrInvalidPriceSort.Error() + "\n",
+			err:          types.ErrInvalidPriceSort.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{
@@ -267,7 +268,7 @@ func TestGetAllAds(t *testing.T) {
 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
 			expectOutput: testAds,
 			queryParams:  map[string]string{"page": "1", "price": "asc", "date": ""},
-			err:          ErrInvalidDateSort.Error() + "\n",
+			err:          types.ErrInvalidDateSort.Error() + "\n",
 			code:         http.StatusBadRequest,
 		},
 		{

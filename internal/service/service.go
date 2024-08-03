@@ -9,7 +9,7 @@ import (
 type AdServiceInterface interface {
 	Create(ad *models.Ad) (int, error)
 	GetOne(id int) (*models.Ad, error)
-	GetAll(priceSort string, dateSort string, page int) ([]*models.Ad, error)
+	GetAll(priceSort string, dateSort string, page int, userId int) ([]*models.Ad, error)
 }
 
 type Service struct {

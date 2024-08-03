@@ -8,5 +8,6 @@ type Ad struct {
 	Description string    `json:"description,omitempty"`
 	Price       int       `json:"price,omitempty"`
 	Photos      []string  `json:"photos,omitempty"`
+	UserId      int  `json:"user_id,omitempty"`
 	Timestamp   time.Time `json:"timestamp,omitempty" swaggerignore:"true"`
 }

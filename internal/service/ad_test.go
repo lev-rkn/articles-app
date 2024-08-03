@@ -1,6 +1,7 @@
 package services
 
 import (
+	"ads-service/internal/lib/types"
 	"ads-service/internal/models"
 	"ads-service/internal/repository"
 	"ads-service/internal/repository/mocks"
@@ -41,7 +42,7 @@ func TestGetOne(t *testing.T) {
 				userRepo.On("GetOne", testAd.Id).Return(nil, pgx.ErrNoRows)
 			},
 			testAd: testAd,
-			err:    errAdNotFound,
+			err:    types.ErrAdNotFound,
 		},
 		{name: "Получена любая другая ошибка",
 			mockExpect: func(userRepo *mocks.AdRepoInterface) {
@@ -136,6 +137,7 @@ func TestGetAll(t *testing.T) {
 	}
 	testPriceSort := "price asc"
 	testDateSort := "date desc"
+	testUserId := 6
 	testPageNumber := 1
 
 	testCases := []struct {
@@ -170,7 +172,7 @@ func TestGetAll(t *testing.T) {
 			service := NewService(repository)
 
 			testCase.mockExpect(mockAdRepoInterface)
-			ads, err := service.Ad.GetAll(testPriceSort, testDateSort, testPageNumber)
+			ads, err := service.Ad.GetAll(testPriceSort, testDateSort, testPageNumber, testUserId)
 
 			assert.Equal(t, testCase.err, err)
 			assert.Equal(t, testCase.expectedAds, ads)

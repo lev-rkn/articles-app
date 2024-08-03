@@ -1,12 +1,12 @@
 package controllers
 
 import (
+	"ads-service/internal/lib/types"
 	"ads-service/internal/models"
 	services "ads-service/internal/service"
 	"ads-service/metrics"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -37,17 +37,6 @@ func InitAdController(
 	return adController
 }
 
-var (
-	ErrEmptyTitle         = errors.New("заголовок не может быть пустым")
-	ErrInvalidTitle       = errors.New("длина заголовка должна превышать 200 символов")
-	ErrInvalidDescription = errors.New("длина описания не должна превышать 1000 симоволов")
-	ErrInvalidPhotos      = errors.New("нельзя загрузить больше чем 3 ссылки на фото")
-	ErrInvalidPageNumber  = errors.New("невалидный номер страницы")
-	ErrInvalidPriceSort   = errors.New("невалидный параметр сортировки по цене")
-	ErrInvalidDateSort    = errors.New("невалидный параметр сортировки по дате")
-	ErrInvalidId          = errors.New("невалидный идентификатор (id) объявления")
-)
-
 // @Summary Создание объявления
 // @Tags ads
 // @Accept json
@@ -60,7 +49,7 @@ var (
 func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 	go metrics.CreateAdRequest.Inc()
 	// проверяем наличие ошибки, возможно переданной нам через middleware
-	if v, ok := r.Context().Value("error").(error); ok {
+	if v, ok := r.Context().Value(types.KeyError).(error); ok {
 		if v != nil {
 			http.Error(w, v.Error(), http.StatusBadRequest)
 			return
@@ -87,25 +76,25 @@ func (h *adController) Create(w http.ResponseWriter, r *http.Request) {
 	// проверка, что длина заголовка не превышает 200 симоволов
 	if utf8.RuneCountInString(ad.Title) > 200 {
 		slog.Error("invalid title", "title", ad.Title)
-		http.Error(w, ErrInvalidTitle.Error(), http.StatusBadRequest)
+		http.Error(w, types.ErrInvalidTitle.Error(), http.StatusBadRequest)
 		return
 	}
 	// Проверка, что заголовок не пустой
 	if ad.Title == "" {
 		slog.Error("empty title", "title", ad.Title)
-		http.Error(w, ErrEmptyTitle.Error(), http.StatusBadRequest)
+		http.Error(w, types.ErrEmptyTitle.Error(), http.StatusBadRequest)
 		return
 	}
 	// проверка, что длина описания не должна превышать 1000 символов
 	if utf8.RuneCountInString(ad.Description) > 1000 {
 		slog.Error("invalid description", "description", ad.Description)
-		http.Error(w, ErrInvalidDescription.Error(), http.StatusBadRequest)
+		http.Error(w, types.ErrInvalidDescription.Error(), http.StatusBadRequest)
 		return
 	}
 	// проверка, что нельзя загрузить больше чем 3 ссылки на фото
 	if len(ad.Photos) > 3 {
 		slog.Error("invalid photos", "photos", ad.Photos)
-		http.Error(w, ErrInvalidPhotos.Error(), http.StatusBadRequest)
+		http.Error(w, types.ErrInvalidPhotos.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -144,13 +133,21 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	q := r.URL.Query()
-	page, price, date := q.Get("page"), q.Get("price"), q.Get("date")
+	page, price, date, userId := q.Get("page"), q.Get("price"), q.Get("date"), q.Get("user_id")
 
 	// проверка, что номер страницы является целочисленным значением
 	pageN, err := strconv.Atoi(page)
 	if err != nil {
 		slog.Error("unable to parse page number", "err", err.Error())
-		http.Error(w, ErrInvalidPageNumber.Error(), http.StatusBadRequest)
+		http.Error(w, types.ErrInvalidPageNumber.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// проверка, что идентификатор пользователя является целочисленным значением
+	userIdN, err := strconv.Atoi(userId)
+	if err != nil {
+		slog.Error("unable to parse page number", "err", err.Error())
+		http.Error(w, types.ErrInvalidUserId.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -160,7 +157,7 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 			price = "price " + price
 		} else {
 			slog.Error("Invalid price query parameter: " + price)
-			http.Error(w, ErrInvalidPriceSort.Error(), http.StatusBadRequest)
+			http.Error(w, types.ErrInvalidPriceSort.Error(), http.StatusBadRequest)
 			return
 		}
 	}
@@ -171,12 +168,12 @@ func (h *adController) GetAll(w http.ResponseWriter, r *http.Request) {
 			date = "date " + date
 		} else {
 			slog.Error("Invalid date query parameter: " + date)
-			http.Error(w, ErrInvalidDateSort.Error(), http.StatusBadRequest)
+			http.Error(w, types.ErrInvalidDateSort.Error(), http.StatusBadRequest)
 			return
 		}
 	}
 
-	adsArr, err := h.adService.GetAll(price, date, pageN)
+	adsArr, err := h.adService.GetAll(price, date, pageN, userIdN)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -218,7 +215,7 @@ func (h *adController) GetOne(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.PathValue("id"))
 	if err != nil {
 		slog.Error("unable to parse id", "err", err.Error())
-		http.Error(w, ErrInvalidId.Error(), http.StatusBadRequest)
+		http.Error(w, types.ErrInvalidId.Error(), http.StatusBadRequest)
 		return
 	}
 
