@@ -3,7 +3,7 @@
 ## Запуск
 
 ```bash
-add-docker-network
+make add-docker-network
 
 make run
 ```
