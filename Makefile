@@ -1,8 +1,14 @@
+run: run-ads-service run-auth-service run-metrics
 
-cover:
-	go test -short -count=1 -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out
-	rm coverage.out
+add-docker-network:
+	docker network create ads-network
 
-swag_init:
-	swag init -g internal/controllers/server.go
+run-ads-service:
+	docker-compose -f ads-service/docker-compose.yml up -d
+
+run-auth-service:
+	docker-compose -f auth-service/docker-compose.yml up -d
+
+run-metrics:
+	docker-compose -f collecting-metrics/docker-compose.yml up -d
+	

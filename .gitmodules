@@ -1,3 +1,0 @@
-[submodule "auth-service"]
-	path = auth-service
-	url = https://github.com/levrkn/auth-service
