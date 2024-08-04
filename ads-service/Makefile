@@ -6,3 +6,6 @@ cover:
 
 swag_init:
 	swag init -g internal/controllers/server.go
+	
+run-local:
+	go run ./cmd/main.go --config=local
