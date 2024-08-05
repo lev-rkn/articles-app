@@ -1,24 +1,21 @@
-package controllers
+package middlewares
 
 import (
 	"ads-service/internal/config"
 	"ads-service/internal/lib/types"
-	"context"
 	"log/slog"
-	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 // middleware, который проверяет jwt токен, лежащий в заголовке запроса, на валидность.
 // в токене лежит закодированный аутентифицированный пользователь
-func AuthMiddleware(
-	handlerFunc func(w http.ResponseWriter, r *http.Request),
-) func(http.ResponseWriter, *http.Request) {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
 		// Получаем JWT-токен из запроса
-		tokenStr := extractBearerToken(r)
+		tokenStr := extractBearerToken(c)
 
 		// Парсим и валидируем токен, используя СЕКРЕТНЫЙ ключ
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
@@ -26,10 +23,7 @@ func AuthMiddleware(
 		})
 		if err != nil {
 			slog.Warn("failed to parse token", "err", err.Error())
-
-			ctx := context.WithValue(r.Context(), types.KeyError, types.ErrInvalidToken)
-			handlerFunc(w, r.WithContext(ctx))
-
+			c.Set(types.KeyError, types.ErrInvalidToken)
 			return
 		}
 
@@ -37,16 +31,13 @@ func AuthMiddleware(
 
 		// Полученны данные сохраняем в контекст,
 		// откуда его смогут получить следующие хэндлеры.
-
-		ctx := context.WithValue(r.Context(), types.KeyUser, token)
-
-		handlerFunc(w, r.WithContext(ctx))
-	})
+		c.Set(types.KeyUser, token)
+	}
 }
 
 // Вынимает токен из заголовка запроса
-func extractBearerToken(r *http.Request) string {
-	authHeader := r.Header.Get("Authorization")
+func extractBearerToken(c *gin.Context) string {
+	authHeader := c.Request.Header.Get("Authorization")
 	splitToken := strings.Split(authHeader, "Bearer ")
 	if len(splitToken) != 2 {
 		return ""

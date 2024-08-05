@@ -7,29 +7,30 @@ import (
 	"ads-service/internal/models"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type authController struct {
 	ctx        context.Context
-	mux        *http.ServeMux
+	router     *gin.RouterGroup
 	authClient *auth.Client
 }
 
 func InitAuthController(
 	ctx context.Context,
-	mux *http.ServeMux,
+	router *gin.RouterGroup,
 	authClient *auth.Client,
 ) *authController {
 	authController := &authController{
 		ctx:        ctx,
-		mux:        mux,
+		router:     router,
 		authClient: authClient,
 	}
-	mux.HandleFunc("POST /user/login/", authController.Login)
-	mux.HandleFunc("POST /user/register/", authController.Register)
+	router.POST("/login/", authController.Login)
+	router.POST("/register/", authController.Register)
 
 	return authController
 }
@@ -39,16 +40,16 @@ func InitAuthController(
 // @Accept json
 // @Produce json
 // @Param user body models.User true "Почта и пароль пользователя"
-// @Success 200 {string} string "token" 
+// @Success 200 {string} string "token"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router	/user/login/ [post]
-func (c *authController) Login(w http.ResponseWriter, r *http.Request) {
+func (a *authController) Login(c *gin.Context) {
 	user := &models.User{}
-	err := json.NewDecoder(r.Body).Decode(&user)
+	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
 		slog.Error("unable to decode ad", "err", err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -57,16 +58,14 @@ func (c *authController) Login(w http.ResponseWriter, r *http.Request) {
 		Email:    user.Email,
 		Password: user.Password,
 	}
-	res, err := c.authClient.Api.Login(c.ctx, loginIn)
+	res, err := a.authClient.Api.Login(c, loginIn)
 	if err != nil {
 		slog.Error("unable to login", "err", err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf(`{"token": "%s"}`, res.GetToken())))
+	c.JSON(http.StatusOK, gin.H{"token": res.GetToken()})
 }
 
 // @Summary Регистрация пользователя
@@ -74,16 +73,16 @@ func (c *authController) Login(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Param user body models.User true "Почта и пароль пользователя"
-// @Success 201 {string} int "id" 
+// @Success 201 {string} int "id"
 // @Failure 400 {string} string "Bad Request"
 // @Failure 500 {string} string "Internal Server Error"
 // @Router	/user/register/ [post]
-func (c *authController) Register(w http.ResponseWriter, r *http.Request) {
+func (a *authController) Register(c *gin.Context) {
 	user := &models.User{}
-	err := json.NewDecoder(r.Body).Decode(&user)
+	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
 		slog.Error("unable to decode ad", "err", err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -91,14 +90,12 @@ func (c *authController) Register(w http.ResponseWriter, r *http.Request) {
 		Email:    user.Email,
 		Password: user.Password,
 	}
-	res, err := c.authClient.Api.Register(c.ctx, registerIn)
+	res, err := a.authClient.Api.Register(c, registerIn)
 	if err != nil {
 		slog.Error("unable to register", "err", err.Error())
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})	
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(fmt.Sprintf(`{"id": %d}`, res.GetUserId())))
+	c.JSON(http.StatusCreated, gin.H{"id": res.GetUserId()})
 }

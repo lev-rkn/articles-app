@@ -6,11 +6,11 @@ import (
 	"ads-service/internal/service"
 	"context"
 	"log/slog"
-	"net/http"
 	"time"
 
 	_ "ads-service/docs"
 
+	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/swaggo/http-swagger"
 )
@@ -28,27 +28,26 @@ import (
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
 // @host		localhost:8080
-func New(ctx context.Context, service *services.Service) *http.ServeMux {	
-	mux := http.NewServeMux()
-
-	// swagger
-	mux.Handle("/swagger/*", httpSwagger.Handler(
+func New(ctx context.Context, service *services.Service) *gin.Engine {
+	router := gin.Default()
+	router.GET("/swagger/*any", gin.WrapF(httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
-	))
-	
-	// Метрики
-	mux.Handle("/metrics", promhttp.Handler())
+	)))
+
+	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Инициализация Контроллера объявлений
-	InitAdController(ctx, service.Ad, mux)
+	adRouter := router.Group("/ad")
+	InitAdController(ctx, service.Ad, adRouter)
 
 	// создание экземпляра клиента для обращения к auth по GRPC
-	client, err := auth.New(ctx, config.Cfg.AuthGPRC.Address, time.Second * 10, 3)
+	client, err := auth.New(ctx, config.Cfg.AuthGPRC.Address, time.Second*10, 3)
 	if err != nil {
 		slog.Error(err.Error())
 	}
 	// Инициализация контроллера аутентификации-авторизации
-	InitAuthController(ctx, mux, client)
+	userRouter := router.Group("/user")
+	InitAuthController(ctx, userRouter, client)
 
-	return mux
+	return router
 }
