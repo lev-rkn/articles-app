@@ -1,10 +1,10 @@
-run: run-ads-service run-auth-service run-metrics
+run: run-articles-service run-auth-service run-metrics
 
 add-docker-network:
-	docker network create ads-network
+	docker network create articles-network
 
-run-ads-service:
-	docker-compose -f ads-service/docker-compose.yml up -d
+run-articles-service:
+	docker-compose -f articles-service/docker-compose.yml up -d
 
 run-auth-service:
 	docker-compose -f auth-service/docker-compose.yml up -d

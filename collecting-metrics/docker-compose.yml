@@ -10,7 +10,7 @@ services:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     command: --config.file=/etc/prometheus/prometheus.yml
     networks:
-      - ads-network
+      - articles-network
 
   grafana:
     image: grafana/grafana
@@ -22,8 +22,8 @@ services:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
     networks:
-      - ads-network
+      - articles-network
 
 networks:
-  ads-network:
+  articles-network:
     external: true
