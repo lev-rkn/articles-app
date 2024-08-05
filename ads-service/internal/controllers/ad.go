@@ -11,9 +11,9 @@ import (
 	"log/slog"
 	"net/http"
 	"strconv"
-	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -87,9 +87,11 @@ func (h *adController) Create(c *gin.Context) {
 		}
 	}
 
-	err = validateCreateAdRequest(ad)
+	validate := validator.New()
+	err = validate.Struct(ad)
 	if err != nil {
-
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
 	}
 
 	id, err := h.adService.Create(ad)
@@ -221,28 +223,4 @@ func (h *adController) GetOne(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, ad)
-}
-
-func validateCreateAdRequest(ad *models.Ad) error {
-	// проверка, что длина заголовка не превышает 200 симоволов
-	if utf8.RuneCountInString(ad.Title) > 200 {
-		slog.Error("invalid title", "title", ad.Title)
-		return types.ErrInvalidTitle
-	}
-	// Проверка, что заголовок не пустой
-	if ad.Title == "" {
-		slog.Error("empty title", "title", ad.Title)
-		return types.ErrEmptyTitle
-	}
-	// проверка, что длина описания не должна превышать 1000 символов
-	if utf8.RuneCountInString(ad.Description) > 1000 {
-		slog.Error("invalid description", "description", ad.Description)
-		return types.ErrInvalidDescription
-	}
-	// проверка, что нельзя загрузить больше чем 3 ссылки на фото
-	if len(ad.Photos) > 3 {
-		slog.Error("invalid photos", "photos", ad.Photos)
-		return types.ErrInvalidPhotos
-	}
-	return nil
 }
