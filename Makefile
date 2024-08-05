@@ -11,4 +11,3 @@ run-auth-service:
 
 run-metrics:
 	docker-compose -f collecting-metrics/docker-compose.yml up -d
-	

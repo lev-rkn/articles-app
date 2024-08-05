@@ -2,7 +2,7 @@ CREATE TABLE "comments" (
   "id" BIGSERIAL PRIMARY KEY,
   "user_id" bigint NOT NULL,
   "article_id" bigint NOT NULL,
-  "text" varchar(500) NOT NULL
+  "text" varchar(500) NOT NULL,
   "timestamp" timestamptz NOT NULL DEFAULT (now())
 );
 

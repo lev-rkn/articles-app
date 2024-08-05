@@ -56,7 +56,7 @@ func (s *AuthService) Login(
 	user, err := s.authStorage.GetUser(ctx, email)
 	if err != nil {
 
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			slog.Warn("user not found", "err", err.Error())
 			return "", types.ErrUserNotFound
 		}
@@ -74,7 +74,7 @@ func (s *AuthService) Login(
 	// Получаем информацию о приложении
 	app, err := s.authStorage.GetApp(ctx, appID)
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			slog.Warn("app not found", "err", err.Error())
 			return "", types.ErrAppNotFound
 		}

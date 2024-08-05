@@ -15,6 +15,7 @@ import (
 
 type Repository struct {
 	Article ArticleRepoInterface
+	Comment CommentRepoInterface
 }
 
 func NewRepository(ctx context.Context) *Repository {
@@ -39,6 +40,7 @@ func NewRepository(ctx context.Context) *Repository {
 
 	var repository = &Repository{
 		Article: NewArticleRepo(ctx, conn),
+		Comment: NewCommentRepo(ctx, conn),
 	}
 
 	return repository

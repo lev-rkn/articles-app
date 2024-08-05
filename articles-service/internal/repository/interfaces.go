@@ -9,4 +9,8 @@ type ArticleRepoInterface interface {
 	GetAll(priceSort string, dateSort string, page int, userId int) ([]*models.Article, error)
 }
 
-// TODO comment interface
+//go:generate mockery --name CommentRepoInterface --output ./mocks
+type CommentRepoInterface interface {
+	Create(comment *models.Comment) (int, error)
+	GetCommentsOnArticle(articleId int) ([]*models.Comment, error)
+}

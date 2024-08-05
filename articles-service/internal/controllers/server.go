@@ -40,6 +40,10 @@ func NewRouter(ctx context.Context, service *service.Service) *gin.Engine {
 	articleRouter := router.Group("/article")
 	InitArticleController(ctx, service.Article, articleRouter)
 
+	// Инициализация Контроллера комментариев
+	commentRouter := router.Group("/comments/")
+	InitCommentController(ctx, service.Comment, commentRouter)
+
 	// создание экземпляра клиента для обращения к auth по GRPC
 	client, err := auth.NewAuthClient(ctx, config.Cfg.AuthGPRC.Address, time.Second*10, 3)
 	if err != nil {

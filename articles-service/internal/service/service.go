@@ -8,6 +8,7 @@ import (
 
 type Service struct {
 	Article ArticleServiceInterface
+	Comment CommentServiceInterface
 }
 
 func NewService(
@@ -15,5 +16,6 @@ func NewService(
 ) *Service {
 	return &Service{
 		Article: &articleService{repository: repository},
+		Comment: &commentService{repository: repository},
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"articles-service/internal/lib/types"
 	"articles-service/internal/models"
 	"articles-service/internal/repository"
+	"errors"
 	"log/slog"
 
 	"github.com/jackc/pgx/v5"
@@ -39,7 +40,7 @@ func (s *articleService) Create(article *models.Article) (int, error) {
 func (s *articleService) GetOne(id int) (*models.Article, error) {
 	article, err := s.repository.Article.GetOne(id)
 
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, types.ErrArticleNotFound
 	}
 

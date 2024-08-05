@@ -4,4 +4,4 @@ global:
 scrape_configs:
   - job_name: 'articles-app'
     static_configs:
-      - targets: ['ad-server:8080']
+      - targets: ['articles-service:8080']
