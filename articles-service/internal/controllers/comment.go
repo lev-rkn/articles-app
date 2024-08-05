@@ -3,12 +3,12 @@ package controllers
 import (
 	"articles-service/internal/controllers/middlewares"
 	"articles-service/internal/lib/types"
+	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
 	"articles-service/internal/service"
 	"articles-service/metrics"
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -71,7 +71,7 @@ func (h *commentController) CreateComment(c *gin.Context) {
 	comment := &models.Comment{}
 	err = json.NewDecoder(c.Request.Body).Decode(&comment)
 	if err != nil {
-		slog.Error("unable to decode comment", "err", err.Error())
+		utils.ErrorLog("unable to decode comment", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -124,14 +124,14 @@ func (h *commentController) GetCommentsOnArticle(c *gin.Context) {
 
 	articleId, err := strconv.Atoi(c.Param("articleId"))
 	if err != nil {
-		slog.Error("parse articleId", "err", err.Error())
+		utils.ErrorLog("parse articleId", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	commentsArr, err := h.commentService.GetCommentsOnArticle(articleId)
 	if err != nil {
-		slog.Error("unable to get comments", "err", err.Error())
+		utils.ErrorLog("unable to get comments", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

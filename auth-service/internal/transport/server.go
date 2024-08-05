@@ -1,10 +1,10 @@
 package transport
 
 import (
+	"auth-service/internal/lib/utils"
 	"auth-service/internal/service"
 	"context"
 	"fmt"
-	"log/slog"
 	"runtime/debug"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
@@ -18,7 +18,7 @@ func NewServer(ctx context.Context, service *service.Service) *grpc.Server {
 	// Если мы встречаем панику во время работы нашего сервера, то мы ее обрабатываем.
 	recoveryOpts := []recovery.Option{
 		recovery.WithRecoveryHandler(func(p interface{}) (err error) {
-			slog.Error("Recovered from panic", slog.Any("panic", p))
+			utils.ErrorLog("Recovered from panic", err)
 			fmt.Println("stacktrace from panic: \n" + string(debug.Stack()))
 			return status.Errorf(codes.Internal, "internal error")
 		}),

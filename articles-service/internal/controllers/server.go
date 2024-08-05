@@ -3,16 +3,16 @@ package controllers
 import (
 	"articles-service/internal/clients/grpc/auth"
 	"articles-service/internal/config"
+	"articles-service/internal/lib/utils"
 	"articles-service/internal/service"
 	"context"
-	"log/slog"
 	"time"
 
 	_ "articles-service/docs"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/swaggo/http-swagger"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 //	@title			Swagger Example API
@@ -47,7 +47,7 @@ func NewRouter(ctx context.Context, service *service.Service) *gin.Engine {
 	// создание экземпляра клиента для обращения к auth по GRPC
 	client, err := auth.NewAuthClient(ctx, config.Cfg.AuthGPRC.Address, time.Second*10, 3)
 	if err != nil {
-		slog.Error(err.Error())
+		utils.ErrorLog("create authGRPC client", err)
 	}
 	// Инициализация контроллера аутентификации-авторизации
 	userRouter := router.Group("/user")

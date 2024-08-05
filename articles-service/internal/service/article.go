@@ -2,10 +2,10 @@ package service
 
 import (
 	"articles-service/internal/lib/types"
+	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
 	"articles-service/internal/repository"
 	"errors"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -17,10 +17,11 @@ type articleService struct {
 var _ ArticleServiceInterface = (*articleService)(nil)
 
 func (s *articleService) GetAll(priceSort string, dateSort string, page int, userId int,
-	) ([]*models.Article, error) {
+) ([]*models.Article, error) {
 	articles, err := s.repository.Article.GetAll(priceSort, dateSort, page, userId)
+	// TODO: никакой обработки ошибок из базы
 	if err != nil {
-		slog.Error("service.article.GetAll", "err", err.Error())
+		utils.ErrorLog("service.article.GetAll", err)
 		return nil, err
 	}
 
@@ -29,8 +30,9 @@ func (s *articleService) GetAll(priceSort string, dateSort string, page int, use
 
 func (s *articleService) Create(article *models.Article) (int, error) {
 	id, err := s.repository.Article.Create(article)
+	// TODO: никакой обработки ошибок из базы
 	if err != nil {
-		slog.Error("service.article.Create", "err", err.Error())
+		utils.ErrorLog("service.article.Create", err)
 		return -1, err
 	}
 
@@ -42,11 +44,6 @@ func (s *articleService) GetOne(id int) (*models.Article, error) {
 
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, types.ErrArticleNotFound
-	}
-
-	if err != nil {
-		slog.Error("service.article.GetOne", "err", err.Error())
-		return nil, err
 	}
 
 	return article, nil

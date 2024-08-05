@@ -2,8 +2,8 @@ package repository
 
 import (
 	"articles-service/internal/config"
+	"articles-service/internal/lib/utils"
 	"context"
-	"log/slog"
 
 	"github.com/jackc/pgx/v5"
 
@@ -11,7 +11,6 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
-
 
 type Repository struct {
 	Article ArticleRepoInterface
@@ -22,20 +21,16 @@ func NewRepository(ctx context.Context) *Repository {
 	// подключение к postgres
 	conn, err := pgx.Connect(context.Background(), config.Cfg.PgUrl)
 	if err != nil {
-
-		slog.Error("Unable to connect to database",
-			"err", err.Error())
+		utils.ErrorLog("Unable to connect to database", err)
 	}
-	
+
 	// запуск миграций
 	m, err := migrate.New(config.Cfg.MigrationsDir, config.Cfg.PgUrl)
 	if err != nil {
-		slog.Error("new migrations",
-			"err", err.Error())
+		utils.ErrorLog("new migrations", err)
 	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		slog.Error("migrations up",
-			"err", err.Error())
+		utils.ErrorLog("migrations up", err)
 	}
 
 	var repository = &Repository{

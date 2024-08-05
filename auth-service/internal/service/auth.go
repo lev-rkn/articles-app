@@ -3,6 +3,7 @@ package service
 import (
 	"auth-service/internal/lib/jwt"
 	"auth-service/internal/lib/types"
+	"auth-service/internal/lib/utils"
 	"auth-service/internal/storage"
 	"context"
 	"errors"
@@ -24,15 +25,15 @@ func (s *AuthService) RegisterNewUser(
 	// Генерируем хэш и соль для пароля.
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		slog.Error("failed to generate password hash", "err", err.Error())
+		utils.ErrorLog("failed to generate password hash", err)
 		return 0, err
 	}
 
 	// Сохраняем пользователя в БД
 	id, err := s.authStorage.SaveUser(ctx, email, passHash)
 	if err != nil {
-		slog.Error("failed to save user", "err", err)
-		
+		utils.ErrorLog("failed to save user", err)
+
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" {
@@ -61,7 +62,7 @@ func (s *AuthService) Login(
 			return "", types.ErrUserNotFound
 		}
 
-		slog.Error("failed to get user", "err", err.Error())
+		utils.ErrorLog("failed to get user", err)
 		return "", err
 	}
 
@@ -87,7 +88,7 @@ func (s *AuthService) Login(
 	// Создаём токен авторизации
 	token, err := jwt.NewToken(user, app, tokenTTL)
 	if err != nil {
-		slog.Error("failed to generate token", "err", err.Error())
+		utils.ErrorLog("failed to generate token", err)
 		return "", err
 	}
 

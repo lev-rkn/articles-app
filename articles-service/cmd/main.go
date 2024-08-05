@@ -2,6 +2,7 @@ package main
 
 import (
 	"articles-service/internal/app"
+	"articles-service/internal/lib/utils"
 	"context"
 	"log/slog"
 	"net/http"
@@ -16,7 +17,7 @@ func main() {
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			slog.Error("Listen server", "err", err.Error())
+			utils.ErrorLog("Listen server", err)
 		}
 	}()
 
@@ -35,7 +36,7 @@ func gracefulShutdown(server *http.Server) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := server.Shutdown(ctx); err != nil {
-		slog.Error("Server Shutdown:", "err", err.Error())
+		utils.ErrorLog("Server Shutdown:", err)
 	}
 
 	<-ctx.Done()

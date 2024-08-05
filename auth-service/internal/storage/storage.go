@@ -2,8 +2,8 @@ package storage
 
 import (
 	"auth-service/internal/config"
+	"auth-service/internal/lib/utils"
 	"context"
-	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -19,19 +19,16 @@ func NewStorage(ctx context.Context) *Storage {
 	// подключение к postgres
 	conn, err := pgx.Connect(context.Background(), config.Cfg.PGUrl)
 	if err != nil {
-		slog.Error("Unable to connect to database",
-			"err", err.Error())
+		utils.ErrorLog("Unable to connect to database", err)
 	}
 
 	// запуск миграций postgres
 	m, err := migrate.New("file://"+config.Cfg.MigrationsPath, config.Cfg.PGUrl)
 	if err != nil {
-		slog.Error("new migrations",
-			"err", err.Error())
+		utils.ErrorLog("new migrations", err)
 	}
 	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
-		slog.Error("migrations up",
-			"err", err.Error())
+		utils.ErrorLog("migrations up", err)
 	}
 
 	var storage = &Storage{

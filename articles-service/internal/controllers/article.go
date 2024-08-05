@@ -3,12 +3,12 @@ package controllers
 import (
 	"articles-service/internal/controllers/middlewares"
 	"articles-service/internal/lib/types"
+	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
 	"articles-service/internal/service"
 	"articles-service/metrics"
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -72,7 +72,7 @@ func (h *articleController) Create(c *gin.Context) {
 	article := &models.Article{}
 	err = json.NewDecoder(c.Request.Body).Decode(&article)
 	if err != nil {
-		slog.Error("unable to decode article", "err", err.Error())
+		utils.ErrorLog("unable to decode article", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -126,46 +126,51 @@ func (h *articleController) GetAll(c *gin.Context) {
 		}
 	}()
 
-	q := c.Request.URL.Query()
-	page, price, date, userId := c.Query("page"), c.Query("price"), c.Query("date"), c.Query("user_id")
+	page,
+		price,
+		date,
+		userId := c.Query("page"),
+		c.Query("price"),
+		c.Query("date"),
+		c.Query("user_id")
 
 	// проверка, что номер страницы является целочисленным значением
 	pageN, err := strconv.Atoi(page)
 	if err != nil {
-		slog.Error("unable to parse page number", "err", err.Error())
+		utils.ErrorLog("unable to parse page number", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidPageNumber.Error()})
 		return
 	}
 
 	// проверка, что идентификатор пользователя является целочисленным значением
 	var userIdN int
-	if q.Has("user_id") {
+	if userId != "" {
 		// проверка, что идентификатор пользователя является целочисленным значением
 		userIdN, err = strconv.Atoi(userId)
 		if err != nil {
-			slog.Error("unable to parse user id", "err", err.Error())
+			utils.ErrorLog("unable to parse user id", err)
 			c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidUserId.Error()})
 			return
 		}
 	}
 
 	// Проверка, что параметры сортировки по цене содержат либо asc, либо desc
-	if q.Has("price") {
+	if price != "" {
 		if price == "asc" || price == "desc" {
 			price = "price " + price
 		} else {
-			slog.Error("Invalid price query parameter: " + price)
+			utils.ErrorLog("Invalid price query parameter: "+price, types.ErrInvalidPriceSort)
 			c.JSON(http.StatusBadRequest, types.ErrInvalidPriceSort.Error())
 			return
 		}
 	}
 
 	// Проверка, что параметры сортировки по дате содержат либо asc, либо desc
-	if q.Has("date") {
+	if date != "" {
 		if date == "asc" || date == "desc" {
 			date = "date " + date
 		} else {
-			slog.Error("Invalid date query parameter: " + date)
+			utils.ErrorLog("Invalid date query parameter: "+date, types.ErrInvalidDateSort)
 			c.JSON(http.StatusBadRequest, types.ErrInvalidDateSort.Error())
 			return
 		}
@@ -173,7 +178,7 @@ func (h *articleController) GetAll(c *gin.Context) {
 
 	articlesArr, err := h.articleService.GetAll(price, date, pageN, userIdN)
 	if err != nil {
-		slog.Error("unable to get articles", "err", err.Error())
+		utils.ErrorLog("unable to get articles", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
@@ -204,20 +209,20 @@ func (h *articleController) GetOne(c *gin.Context) {
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		slog.Error("unable to parse id", "err", err.Error())
+		utils.ErrorLog("unable to parse id", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidId.Error()})
 		return
 	}
 
 	article, err := h.articleService.GetOne(id)
 	if err != nil {
-		slog.Error("unable to get article", "err", err.Error())
+		utils.ErrorLog("unable to get article", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	if err != nil {
-		slog.Error("article marshalling", "err", err.Error())
+		utils.ErrorLog("article marshalling", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

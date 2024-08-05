@@ -4,10 +4,10 @@ import (
 	authv1 "articles-service/api/auth-service/gen/proto"
 	"articles-service/internal/clients/grpc/auth"
 	"articles-service/internal/config"
+	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
 	"context"
 	"encoding/json"
-	"log/slog"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +48,7 @@ func (a *authController) Login(c *gin.Context) {
 	user := &models.User{}
 	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
-		slog.Error("unable to decode ad", "err", err.Error())
+		utils.ErrorLog("unable to decode ad", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -60,7 +60,7 @@ func (a *authController) Login(c *gin.Context) {
 	}
 	res, err := a.authClient.Api.Login(c, loginIn)
 	if err != nil {
-		slog.Error("unable to login", "err", err.Error())
+		utils.ErrorLog("unable to login", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -81,7 +81,7 @@ func (a *authController) Register(c *gin.Context) {
 	user := &models.User{}
 	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
-		slog.Error("unable to decode ad", "err", err.Error())
+		utils.ErrorLog("unable to decode ad", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -92,7 +92,7 @@ func (a *authController) Register(c *gin.Context) {
 	}
 	res, err := a.authClient.Api.Register(c, registerIn)
 	if err != nil {
-		slog.Error("unable to register", "err", err.Error())
+		utils.ErrorLog("unable to register", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
