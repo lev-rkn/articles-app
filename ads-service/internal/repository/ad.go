@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/georgysavva/scany/v2/pgxscan"
 )
 
 type AdRepo struct {
@@ -35,11 +36,12 @@ func (s *AdRepo) Create(ad *models.Ad) (int, error) {
 
 func (s *AdRepo) GetOne(id int) (*models.Ad, error) {
 	ad := &models.Ad{}
-
-	err := s.conn.QueryRow(s.ctx,
-		`SELECT title, price, photos, description, user_id 
-		FROM advertisements WHERE id = $1;`, id).
-		Scan(&ad.Title, &ad.Price, &ad.Photos, &ad.Description, &ad.UserId)
+	err := pgxscan.Get(
+		s.ctx, s.conn, ad, `
+		SELECT *
+		FROM advertisements 
+		WHERE id=$1;`, id,
+	)
 
 	return ad, err
 }
@@ -68,7 +70,7 @@ func (s *AdRepo) GetAll(priceSort string, dateSort string, page int, userId int)
 	var skipAds = adsPerPage * (page)
 
 	rows, err := s.conn.Query(s.ctx,
-		`SELECT id, title, price, description, photos, user_id 
+		`SELECT *
 		FROM advertisements
 		`+userIdFilterQuery+orderQuery+` LIMIT $1 OFFSET $2;`,
 		adsPerPage, skipAds)
@@ -79,13 +81,9 @@ func (s *AdRepo) GetAll(priceSort string, dateSort string, page int, userId int)
 
 	// Перекладывание всех объектов объявлений в массив
 	adsArr := make([]*models.Ad, 0, adsPerPage)
-	for rows.Next() {
-		ad := &models.Ad{}
-		err = rows.Scan(&ad.Id, &ad.Title, &ad.Price, &ad.Description, &ad.Photos, &ad.UserId)
-		if err != nil {
-			return nil, err
-		}
-		adsArr = append(adsArr, ad)
+	err = pgxscan.ScanAll(&adsArr, rows)
+	if err != nil {
+		return nil, err
 	}
 
 	return adsArr, nil

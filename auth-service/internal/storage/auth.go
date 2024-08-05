@@ -4,34 +4,35 @@ import (
 	"auth-service/internal/models"
 	"context"
 
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 )
 
 type AuthStorage struct {
 	conn *pgx.Conn
 }
+
 var _ AuthStorageInterface = (*AuthStorage)(nil)
 
 func (a *AuthStorage) GetApp(ctx context.Context, appID int32) (*models.App, error) {
 	app := &models.App{}
-	err := a.conn.QueryRow(ctx,
-		`SELECT id, name, secret 
+	err := pgxscan.Get(ctx, a.conn, app, `
+		SELECT *
 		FROM apps 
-		WHERE id=$1;`,
-		appID,
-	).Scan(&app.ID, &app.Name, &app.Secret)
+		WHERE id=$1;`, appID)
 
 	return app, err
 }
 
 func (a *AuthStorage) GetUser(ctx context.Context, email string) (*models.User, error) {
 	user := &models.User{}
-	err := a.conn.QueryRow(ctx,
-		`SELECT id, email, pass_hash 
+
+	err := pgxscan.Get(
+		ctx, a.conn, user, `
+		SELECT *
 		FROM users 
-		WHERE email=$1;`,
-		email,
-	).Scan(&user.ID, &user.Email, &user.PassHash)
+		WHERE email=$1;`, email,
+	)
 
 	return user, err
 }
