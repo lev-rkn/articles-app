@@ -13,12 +13,12 @@ type CommentServiceInterface struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: comment
-func (_m *CommentServiceInterface) Create(comment *models.Comment) (int, error) {
+// CreateComment provides a mock function with given fields: comment
+func (_m *CommentServiceInterface) CreateComment(comment *models.Comment) (int, error) {
 	ret := _m.Called(comment)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Create")
+		panic("no return value specified for CreateComment")
 	}
 
 	var r0 int

@@ -17,6 +17,10 @@ func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Получаем JWT-токен из запроса
 		tokenStr := extractBearerToken(c)
+		if tokenStr == "" {
+			// где-то и не нужна аутентификация
+			return
+		}
 
 		// Парсим и валидируем токен, используя СЕКРЕТНЫЙ ключ
 		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {

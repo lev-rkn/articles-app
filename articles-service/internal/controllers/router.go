@@ -3,6 +3,7 @@ package controllers
 import (
 	"articles-service/internal/clients/grpc/auth"
 	"articles-service/internal/config"
+	"articles-service/internal/controllers/middlewares"
 	"articles-service/internal/lib/utils"
 	"articles-service/internal/service"
 	"context"
@@ -30,6 +31,8 @@ import (
 //	@host	localhost:8080
 func NewRouter(ctx context.Context, service *service.Service) *gin.Engine {
 	router := gin.Default()
+	router.Use(middlewares.AuthMiddleware())
+
 	router.GET("/swagger/*any", gin.WrapF(httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
 	)))

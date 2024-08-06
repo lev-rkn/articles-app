@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"articles-service/internal/controllers/middlewares"
 	"articles-service/internal/lib/types"
 	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
@@ -20,7 +19,6 @@ import (
 type articleController struct {
 	ctx            context.Context
 	articleService service.ArticleServiceInterface
-	router         *gin.RouterGroup
 }
 
 func InitArticleController(
@@ -31,12 +29,10 @@ func InitArticleController(
 	articleController := &articleController{
 		ctx:            ctx,
 		articleService: articleService,
-		router:         router,
 	}
-	router.GET("/all/", articleController.GetAll)
-	router.GET("/:id", articleController.GetOne)
-	router.Use(middlewares.AuthMiddleware())
-	router.POST("/create/", articleController.Create)
+	router.POST("/create/", articleController.CreateArticle)
+	router.GET("/all/", articleController.GetAllArticles)
+	router.GET("/:id", articleController.GetOneArticle)
 
 	return articleController
 }
@@ -50,7 +46,7 @@ func InitArticleController(
 // @Failure	400		{string}	string	"Barticle Request"
 // @Failure	500		{string}	string	"Internal Server Error"
 // @Router		/article/create/ [post]
-func (h *articleController) Create(c *gin.Context) {
+func (h *articleController) CreateArticle(c *gin.Context) {
 	go metrics.CreateArticleRequest.Inc()
 	// проверяем наличие ошибки, возможно переданной нам через middleware
 	if err, ok := c.Value(types.KeyError).(error); ok && err != nil {
@@ -105,7 +101,7 @@ func (h *articleController) Create(c *gin.Context) {
 // @Failure	400		{string}	string	"Barticle Request"
 // @Failure	500		{string}	string	"Internal Server Error"
 // @Router		/article/all/ [get]
-func (h *articleController) GetAll(c *gin.Context) {
+func (h *articleController) GetAllArticles(c *gin.Context) {
 	go metrics.GetArticlesRequest.Inc()
 
 	page,
@@ -134,14 +130,10 @@ func (h *articleController) GetAll(c *gin.Context) {
 	}
 
 	// Проверка, что параметры сортировки по дате содержат либо asc, либо desc
-	if dateSorting != "" {
-		if dateSorting == "asc" || dateSorting == "desc" {
-			dateSorting = "date " + dateSorting
-		} else {
-			utils.ErrorLog("Invalid date query parameter" + dateSorting, nil)
-			c.JSON(http.StatusBadRequest, types.ErrInvalidDateSort.Error())
-			return
-		}
+	if dateSorting != "asc" && dateSorting != "desc" {
+		utils.ErrorLog("Invalid date query parameter"+dateSorting, nil)
+		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidDateSort.Error()})
+		return
 	}
 
 	articlesArr, err := h.articleService.GetAllArticles(dateSorting, pageN, userIdN)
@@ -163,13 +155,13 @@ func (h *articleController) GetAll(c *gin.Context) {
 // @Failure	400	{string}	string	"Barticle Request"
 // @Failure	500	{string}	string	"Internal Server Error"
 // @Router		/article/{id} [get]
-func (h *articleController) GetOne(c *gin.Context) {
+func (h *articleController) GetOneArticle(c *gin.Context) {
 	go metrics.GetArticleRequest.Inc()
 
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorLog("unable to parse id", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidId.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidArticleId.Error()})
 		return
 	}
 

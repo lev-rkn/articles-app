@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"articles-service/internal/controllers/middlewares"
 	"articles-service/internal/lib/types"
 	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
@@ -20,7 +19,6 @@ import (
 type commentController struct {
 	ctx            context.Context
 	commentService service.CommentServiceInterface
-	router         *gin.RouterGroup
 }
 
 func InitCommentController(
@@ -31,10 +29,8 @@ func InitCommentController(
 	commentController := &commentController{
 		ctx:            ctx,
 		commentService: commentService,
-		router:         router,
 	}
 	router.GET("/:articleId/", commentController.GetCommentsOnArticle)
-	router.Use(middlewares.AuthMiddleware())
 	router.POST("/create/", commentController.CreateComment)
 
 	return commentController

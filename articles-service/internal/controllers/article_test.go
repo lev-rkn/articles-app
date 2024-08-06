@@ -1,315 +1,282 @@
 package controllers
 
-// import (
-// 	"articles-service/internal/lib/types"
-// 	"articles-service/internal/models"
-// 	"articles-service/internal/service/mocks"
-// 	"context"
-// 	"encoding/json"
-// 	"errors"
-// 	"net/http"
-// 	"net/http/httptest"
-// 	"strings"
-// 	"testing"
+import (
+	"articles-service/internal/lib/types"
+	"articles-service/internal/models"
+	"articles-service/internal/service/mocks"
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"strings"
+	"testing"
 
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestCreateAd(t *testing.T) {
-// 	// добавить инициализацию логгера, чтобы логировать в файл
-// 	testAd := &models.Ad{
-// 		Title:       "title",
-// 		Description: "description",
-// 		Price:       100,
-// 		Photos:      []string{"photo1", "photo2"},
-// 	}
+func TestCreateArticle(t *testing.T) {
+	testArticle := &models.Article{
+		Title:       "title",
+		Description: "fnsfbn",
+		Photos:      []string{"photo1", "photo2"},
+	}
+	marshalledArticle, _ := json.Marshal(testArticle)
+	articleInJSON := string(marshalledArticle)
+	testArticleForValidationTest, _ := json.Marshal(&models.Article{
+		Title:       "title",
+		Description: "",
+		Photos:      []string{"photo1", "photo2"},
+	})
 
-// 	tests := []struct {
-// 		name         string
-// 		mockExpect   func(adService *mocks.AdServiceInterface)
-// 		ad           *models.Ad
-// 		expectOutput string
-// 		code         int
-// 	}{
-// 		{
-// 			name: "Валидный кейс",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {
-// 				adService.On("Create", testAd).Return(3, nil)
-// 			},
-// 			ad:           testAd,
-// 			expectOutput: `{"id": 3}`,
-// 			code:         http.StatusCreated,
-// 		},
-// 		{
-// 			name:       "Заголовок длиной более 200 символов",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {},
-// 			ad: &models.Ad{
-// 				Photos:      testAd.Photos,
-// 				Title:       strings.Repeat("a", 201),
-// 				Description: testAd.Description,
-// 				Price:       testAd.Price,
-// 			},
-// 			expectOutput: types.ErrInvalidTitle.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name:       "Заголовок пуст",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {},
-// 			ad: &models.Ad{
-// 				Photos:      testAd.Photos,
-// 				Title:       "",
-// 				Description: testAd.Description,
-// 				Price:       testAd.Price,
-// 			},
-// 			expectOutput: types.ErrEmptyTitle.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name:       "Длина описания больше 1000 символов",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {},
-// 			ad: &models.Ad{
-// 				Photos:      testAd.Photos,
-// 				Title:       testAd.Title,
-// 				Description: strings.Repeat("a", 1001),
-// 				Price:       testAd.Price,
-// 			},
-// 			expectOutput: types.ErrInvalidDescription.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name:       "Попытка загрузить более чем 3 ссылки на фото",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {},
-// 			ad: &models.Ad{
-// 				Photos:      []string{"photo1", "photo2", "photo3", "photo4"},
-// 				Title:       testAd.Title,
-// 				Description: testAd.Description,
-// 				Price:       testAd.Price,
-// 			},
-// 			expectOutput: types.ErrInvalidPhotos.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name: "Случайная ошибка от сервиса",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {
-// 				adService.On("Create", testAd).Return(0, errors.New("some error"))
-// 			},
-// 			ad:           testAd,
-// 			expectOutput: errors.New("some error").Error() + "\n",
-// 			code:         http.StatusInternalServerError,
-// 		},
-// 	}
+	testCases := []struct {
+		name        string
+		mockExpect  func(articleService *mocks.ArticleServiceInterface)
+		reqData     string         // то, что мы кидаем в нашу тестируему функцию как тело запроса
+		inContext   map[string]any // внедряем в контекст роутера
+		expJSON     string
+		expError    bool // если ожидается ошибка - мы точно не знаем какая
+		expHTTPCode int
+	}{
+		{
+			name: "Успешный кейс, все работает как и задумывалось",
+			mockExpect: func(articleService *mocks.ArticleServiceInterface) {
+				articleService.On("CreateArticle", testArticle).Return(3, nil)
+			},
+			reqData:     articleInJSON,
+			expJSON:     `{"id":3}`,
+			expHTTPCode: http.StatusCreated,
+		},
+		{
+			name:        "Подсовываем невалидный JSON",
+			mockExpect:  func(articleService *mocks.ArticleServiceInterface) {},
+			reqData:     `{""""""""""""""}`,
+			expError:    true,
+			expHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name:       "Подсовываем ошибку в контексте",
+			mockExpect: func(articleService *mocks.ArticleServiceInterface) {},
+			reqData:    articleInJSON,
+			inContext: map[string]any{
+				types.KeyError: errors.New("some error"),
+			},
+			expError:    true,
+			expHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name:        "Проверяем, что валидация вообще работает",
+			mockExpect:  func(articleService *mocks.ArticleServiceInterface) {},
+			reqData:     string(testArticleForValidationTest),
+			expError:    true,
+			expHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name: "Любая ошибка от сервиса статей",
+			mockExpect: func(articleService *mocks.ArticleServiceInterface) {
+				articleService.On("CreateArticle", testArticle).
+					Return(-1, errors.New("some error"))
+			},
+			reqData:     articleInJSON,
+			expError:    true,
+			expHTTPCode: http.StatusInternalServerError,
+		},
+	}
 
-// 	for _, test := range tests {
-// 		t.Run(test.name, func(t *testing.T) {
-// 			// инициализация контекста
-// 			ctx := context.Background()
-// 			// инициализация мок-сервиса
-// 			mockService := &mocks.AdServiceInterface{}
-// 			// инициализация тестируемого контроллера
-// 			mux := http.NewServeMux()
-// 			adController := InitAdController(ctx, mockService, mux)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			// Иницализируем все зависимости
+			ctx := context.Background()
+			mockArticleService := &mocks.ArticleServiceInterface{}
+			router := gin.Default()
+			articleRouter := router.Group("/article")
+			// внедряем нужные нам для теста значения в контекст через middleware
+			// перед инициализацией тестируемого контроллера
+			articleRouter.Use(func() gin.HandlerFunc {
+				return func(c *gin.Context) {
+					for k, v := range testCase.inContext {
+						c.Set(k, v)
+					}
+				}
+			}())
+			InitArticleController(ctx, mockArticleService, articleRouter)
 
-// 			// превращаем тестовое объявление в JSON
-// 			marshalled, _ := json.Marshal(test.ad)
-// 			// создаем тестовый запрос, который будем пихать в тестируемый контроллер
-// 			req, _ := http.NewRequest("POST", "/ad/create/", strings.NewReader(string(marshalled)))
-// 			// создаем подставной обработчик, который будет слушать ответ тестируемого контроллера
-// 			w := httptest.NewRecorder()
-// 			// саем моку ожидаемое поведение
-// 			test.mockExpect(mockService)
-// 			// запускаем тестируемый контроллер, который должен записать свой ответ в
-// 			// инициализированный выше подставной обработчик
-// 			adController.Create(w, req)
+			// подготовка к запросу
+			testCase.mockExpect(mockArticleService)
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(
+				"POST", "/article/create/",
+				strings.NewReader(testCase.reqData),
+			)
+			router.ServeHTTP(w, req)
 
-// 			// проверка соответствия кода ответа
-// 			assert.Equal(t, test.code, w.Code)
-// 			// проверка записи котроллера
-// 			assert.Equal(t, test.expectOutput, w.Body.String())
-// 			// проверка, что ожадаемое моком поведение в точности выполнено
-// 			mockService.AssertExpectations(t)
-// 		})
-// 	}
-// }
-// func TestGetOneAd(t *testing.T) {
-// 	// добавить инициализацию логгера, чтобы логировать в файл
-// 	testAd := &models.Ad{
-// 		Title:       "title",
-// 		Description: "description",
-// 		Price:       100,
-// 		Photos:      []string{"photo1", "photo2"},
-// 	}
+			if testCase.expError {
+				// какая точно ошибка - нам наверняка неизвестно
+				assert.Contains(t, w.Body.String(), `"error":`)
+			} else {
+				assert.Equal(t, testCase.expJSON, w.Body.String())
+			}
+			assert.Equal(t, testCase.expHTTPCode, w.Code)
+			mockArticleService.AssertExpectations(t)
+		})
+	}
+}
 
-// 	tests := []struct {
-// 		name         string
-// 		mockExpect   func(adService *mocks.AdServiceInterface)
-// 		id           string
-// 		expectOutput *models.Ad
-// 		err          string
-// 		code         int
-// 	}{
-// 		{
-// 			name: "Валидный кейс",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {
-// 				adService.On("GetOne", 5).Return(testAd, nil)
-// 			},
-// 			id:           "5",
-// 			expectOutput: testAd,
-// 			code:         http.StatusOK,
-// 		},
-// 		{
-// 			name:         "Невалидный идентификатор объявления",
-// 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
-// 			id:           "y",
-// 			expectOutput: testAd,
-// 			err:          types.ErrInvalidId.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name: "Любая ошибка из сервиса",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {
-// 				adService.On("GetOne", 5).Return(nil, errors.New("some error"))
-// 			},
-// 			id:           "5",
-// 			expectOutput: testAd,
-// 			err:          errors.New("some error").Error() + "\n",
-// 			code:         http.StatusInternalServerError,
-// 		},
-// 	}
+func TestGetAllArticles(t *testing.T) {
+	testArticles := []*models.Article{
+		{
+			Title:       "title",
+			Description: "fnsfbn",
+			Photos:      []string{"photo1", "photo2"},
+		},
+		{
+			Title:       "title",
+			Description: "fnsfbn",
+			Photos:      []string{"photo1", "photo2"},
+		},
+	}
+	marshalledArticles, _ := json.Marshal(testArticles)
+	articlesInJSON := string(marshalledArticles)
 
-// 	for _, test := range tests {
-// 		t.Run(test.name, func(t *testing.T) {
-// 			// инициализация контекста
-// 			ctx := context.Background()
-// 			// инициализация мок-сервиса
-// 			mockService := &mocks.AdServiceInterface{}
-// 			// инициализация тестируемого контроллера
-// 			mux := http.NewServeMux()
-// 			adController := InitAdController(ctx, mockService, mux)
+	testCases := []struct {
+		name        string
+		mockExp     func(articleService *mocks.ArticleServiceInterface)
+		queryParams map[string]string
+		expJSON     string
+		expHTTPCode int
+	}{
+		{
+			name: "Успешный кейс, рядовая ситуация",
+			mockExp: func(articleService *mocks.ArticleServiceInterface) {
+				articleService.On("GetAllArticles", "asc", 4, 7).Return(testArticles, nil)
+			},
+			queryParams: map[string]string{"page": "4", "user_id": "7", "date": "asc"},
+			expJSON:     articlesInJSON,
+			expHTTPCode: http.StatusOK,
+		},
+		{
+			name: "Любая ошибка из сервиса статей",
+			mockExp: func(articleService *mocks.ArticleServiceInterface) {
+				articleService.On("GetAllArticles", "asc", 4, 7).
+					Return(nil, errors.New("some error"))
+			},
+			queryParams: map[string]string{"page": "4", "user_id": "7", "date": "asc"},
+			expJSON:     `{"error":"some error"}`,
+			expHTTPCode: http.StatusInternalServerError,
+		},
+		{
+			name:        "Неверный номер страницы",
+			mockExp:     func(articleService *mocks.ArticleServiceInterface) {},
+			queryParams: map[string]string{"user_id": "7", "date": "asc"},
+			expJSON:     fmt.Sprintf(`{"error":"%s"}`, types.ErrInvalidPageNumber.Error()),
+			expHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name:        "Неверный идентификатор пользователя",
+			mockExp:     func(articleService *mocks.ArticleServiceInterface) {},
+			queryParams: map[string]string{"page": "4", "user_id": "7п", "date": "asc"},
+			expJSON:     fmt.Sprintf(`{"error":"%s"}`, types.ErrInvalidUserId.Error()),
+			expHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name:        "Неверный параметр сортировки по дате",
+			mockExp:     func(articleService *mocks.ArticleServiceInterface) {},
+			queryParams: map[string]string{"page": "4", "date": "ascending)"},
+			expJSON:     fmt.Sprintf(`{"error":"%s"}`, types.ErrInvalidDateSort.Error()),
+			expHTTPCode: http.StatusBadRequest,
+		},
+	}
 
-// 			// создаем тестовый запрос, который будем пихать в тестируемый контроллер
-// 			req, _ := http.NewRequest("GET", "/ad/", strings.NewReader(""))
-// 			req.SetPathValue("id", test.id)
-// 			// создаем подставной обработчик, который будет слушать ответ тестируемого контроллера
-// 			w := httptest.NewRecorder()
-// 			// суём моку ожидаемое поведение
-// 			test.mockExpect(mockService)
-// 			// запускаем тестируемый контроллер, который должен записать свой ответ в
-// 			// инициализированный выше подставной обработчик
-// 			adController.GetOne(w, req)
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctx := context.Background()
+			mockArticleService := &mocks.ArticleServiceInterface{}
+			router := gin.Default()
+			articleRouter := router.Group("/article")
+			InitArticleController(ctx, mockArticleService, articleRouter)
 
-// 			// Если ожидается ошибка - проверяем ее
-// 			if test.err != "" {
-// 				assert.Equal(t, test.err, w.Body.String())
-// 			} else {
-// 				// Превращаем ожидаемый результат в JSON
-// 				marshalled, _ := json.Marshal(test.expectOutput)
-// 				// затем сверяем его с полученным
-// 				assert.Equal(t, marshalled, w.Body.Bytes())
-// 			}
-// 			// проверка соответствия кода ответа
-// 			assert.Equal(t, test.code, w.Code)
-// 			// проверка, что ожадаемое моком поведение в точности выполнено
-// 			mockService.AssertExpectations(t)
-// 		})
-// 	}
-// }
-// func TestGetAllAds(t *testing.T) {
-// 	// добавить инициализацию логгера, чтобы логировать в файл
-// 	testAds := []*models.Ad{
-// 		{
-// 			Title:       "title",
-// 			Description: "description",
-// 			Price:       100,
-// 			Photos:      []string{"photo1", "photo2"},
-// 		},
-// 		{
-// 			Title:       "title321",
-// 			Description: "description321",
-// 			Price:       100312,
-// 			Photos:      []string{"photo13451", "phodsfvto2"},
-// 		},
-// 	}
+			testCase.mockExp(mockArticleService)
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest("GET", "/article/all/", strings.NewReader(""))
 
-// 	tests := []struct {
-// 		name         string
-// 		mockExpect   func(adService *mocks.AdServiceInterface)
-// 		expectOutput []*models.Ad
-// 		queryParams  map[string]string
-// 		err          string
-// 		code         int
-// 	}{
-// 		{
-// 			name: "Валидный кейс, все параметры присутствуют",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {
-// 				adService.On("GetAll", "price asc", "date desc", 1).Return(testAds, nil)
-// 			},
-// 			expectOutput: testAds,
-// 			queryParams:  map[string]string{"page": "1", "price": "asc", "date": "desc"},
-// 			code:         http.StatusOK,
-// 		},
-// 		{
-// 			name:         "Невалидный номер страницы",
-// 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
-// 			expectOutput: testAds,
-// 			queryParams:  map[string]string{"page": "j", "price": "asc", "date": "desc"},
-// 			err:          types.ErrInvalidPageNumber.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name:         "Невалидный параметр валидации по цене",
-// 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
-// 			expectOutput: testAds,
-// 			queryParams:  map[string]string{"page": "1", "price": "hello,world", "date": "desc"},
-// 			err:          types.ErrInvalidPriceSort.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name:         "Невалидный параметр валидации по дате",
-// 			mockExpect:   func(adService *mocks.AdServiceInterface) {},
-// 			expectOutput: testAds,
-// 			queryParams:  map[string]string{"page": "1", "price": "asc", "date": ""},
-// 			err:          types.ErrInvalidDateSort.Error() + "\n",
-// 			code:         http.StatusBadRequest,
-// 		},
-// 		{
-// 			name: "Любая ошибка в сервисе",
-// 			mockExpect: func(adService *mocks.AdServiceInterface) {
-// 				adService.On("GetAll", "", "", 1).Return(nil, errors.New("some error"))
-// 			},
-// 			queryParams: map[string]string{"page": "1"},
-// 			err:         "some error\n",
-// 			code:        http.StatusInternalServerError,
-// 		},
-// 	}
+			query := req.URL.Query()
+			for k, v := range testCase.queryParams {
+				query.Add(k, v)
+			}
+			req.URL.RawQuery = query.Encode()
+			router.ServeHTTP(w, req)
 
-// 	for _, test := range tests {
-// 		t.Run(test.name, func(t *testing.T) {
-// 			ctx := context.Background()
-// 			mockService := &mocks.AdServiceInterface{}
-// 			mux := http.NewServeMux()
-// 			adController := InitAdController(ctx, mockService, mux)
+			assert.Equal(t, testCase.expJSON, w.Body.String())
+			assert.Equal(t, testCase.expHTTPCode, w.Code)
+			mockArticleService.AssertExpectations(t)
+		})
+	}
+}
 
-// 			// Создаем тестовый запрос и добавляем туда query параметры
-// 			req, _ := http.NewRequest("GET", "/ad/all/", strings.NewReader(""))
-// 			query := req.URL.Query()
-// 			for k, v := range test.queryParams {
-// 				query.Add(k, v)
-// 			}
-// 			req.URL.RawQuery = query.Encode()
+func TestGetOneArticle(t *testing.T) {
+	testArticle := &models.Article{
+		Title:       "title",
+		Description: "fnsfbn",
+		Photos:      []string{"photo1", "photo2"},
+	}
+	marshalledArticle, _ := json.Marshal(testArticle)
+	articleInJSON := string(marshalledArticle)
 
-// 			// создаем обработчик, добавляем моку ожидание и вызываем тестируемую функцию
-// 			w := httptest.NewRecorder()
-// 			test.mockExpect(mockService)
-// 			adController.GetAll(w, req)
+	testCases := []struct {
+		name        string
+		mockExp     func(articleService *mocks.ArticleServiceInterface)
+		articleId   string
+		expJSON     string
+		expHTTPCode int
+	}{
+		{
+			name: "Успешный кейс, рядовая ситуация",
+			mockExp: func(articleService *mocks.ArticleServiceInterface) {
+				articleService.On("GetOneArticle", 4).Return(testArticle, nil)
+			},
+			articleId:   "4",
+			expJSON:     articleInJSON,
+			expHTTPCode: http.StatusOK,
+		},
+		{
+			name:        "Невалидный идентификатор страницы",
+			mockExp:     func(articleService *mocks.ArticleServiceInterface) {},
+			articleId:   "4a",
+			expJSON:     fmt.Sprintf(`{"error":"%s"}`, types.ErrInvalidArticleId.Error()),
+			expHTTPCode: http.StatusBadRequest,
+		},
+		{
+			name: "Любая ошибка из сервиса объявлений",
+			mockExp: func(articleService *mocks.ArticleServiceInterface) {
+				articleService.On("GetOneArticle", 4).
+				Return(nil, errors.New("some error"))
+			},
+			articleId:   "4",
+			expJSON:     `{"error":"some error"}`,
+			expHTTPCode: http.StatusInternalServerError,
+		},
+	}
 
-// 			if test.err != "" {
-// 				assert.Equal(t, test.err, w.Body.String())
-// 			} else {
-// 				marshalled, _ := json.Marshal(test.expectOutput)
-// 				assert.Equal(t, marshalled, w.Body.Bytes())
-// 			}
-// 			assert.Equal(t, test.code, w.Code)
-// 			mockService.AssertExpectations(t)
-// 		})
-// 	}
-// }
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			ctx := context.Background()
+			mockArticleService := &mocks.ArticleServiceInterface{}
+			router := gin.Default()
+			articleRouter := router.Group("/article")
+			InitArticleController(ctx, mockArticleService, articleRouter)
+
+			testCase.mockExp(mockArticleService)
+			w := httptest.NewRecorder()
+			req, _ := http.NewRequest(
+				"GET", "/article/"+testCase.articleId,
+				strings.NewReader(""))
+			router.ServeHTTP(w, req)
+
+			assert.Equal(t, testCase.expJSON, w.Body.String())
+			assert.Equal(t, testCase.expHTTPCode, w.Code)
+			mockArticleService.AssertExpectations(t)
+		})
+	}
+}

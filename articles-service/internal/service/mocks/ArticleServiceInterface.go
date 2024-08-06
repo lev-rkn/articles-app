@@ -13,12 +13,12 @@ type ArticleServiceInterface struct {
 	mock.Mock
 }
 
-// Create provides a mock function with given fields: ad
-func (_m *ArticleServiceInterface) Create(ad *models.Article) (int, error) {
+// CreateArticle provides a mock function with given fields: ad
+func (_m *ArticleServiceInterface) CreateArticle(ad *models.Article) (int, error) {
 	ret := _m.Called(ad)
 
 	if len(ret) == 0 {
-		panic("no return value specified for Create")
+		panic("no return value specified for CreateArticle")
 	}
 
 	var r0 int
@@ -41,12 +41,12 @@ func (_m *ArticleServiceInterface) Create(ad *models.Article) (int, error) {
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: dateSort, page, userId
-func (_m *ArticleServiceInterface) GetAll(dateSort string, page int, userId int) ([]*models.Article, error) {
+// GetAllArticles provides a mock function with given fields: dateSort, page, userId
+func (_m *ArticleServiceInterface) GetAllArticles(dateSort string, page int, userId int) ([]*models.Article, error) {
 	ret := _m.Called(dateSort, page, userId)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetAll")
+		panic("no return value specified for GetAllArticles")
 	}
 
 	var r0 []*models.Article
@@ -71,12 +71,12 @@ func (_m *ArticleServiceInterface) GetAll(dateSort string, page int, userId int)
 	return r0, r1
 }
 
-// GetOne provides a mock function with given fields: id
-func (_m *ArticleServiceInterface) GetOne(id int) (*models.Article, error) {
+// GetOneArticle provides a mock function with given fields: id
+func (_m *ArticleServiceInterface) GetOneArticle(id int) (*models.Article, error) {
 	ret := _m.Called(id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetOne")
+		panic("no return value specified for GetOneArticle")
 	}
 
 	var r0 *models.Article
