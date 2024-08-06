@@ -30,7 +30,8 @@ func InitCommentController(
 		ctx:            ctx,
 		commentService: commentService,
 	}
-	router.GET("/:articleId/", commentController.GetCommentsOnArticle)
+
+	router.GET("/:articleId", commentController.GetCommentsOnArticle)
 	router.POST("/create/", commentController.CreateComment)
 
 	return commentController
@@ -103,7 +104,7 @@ func (h *commentController) GetCommentsOnArticle(c *gin.Context) {
 	articleId, err := strconv.Atoi(c.Param("articleId"))
 	if err != nil {
 		utils.ErrorLog("parse articleId", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidArticleId.Error()})
 		return
 	}
 

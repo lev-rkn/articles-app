@@ -40,7 +40,7 @@ func NewRouter(ctx context.Context, service *service.Service) *gin.Engine {
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// Инициализация Контроллера объявлений
-	articleRouter := router.Group("/article")
+	articleRouter := router.Group("/article/")
 	InitArticleController(ctx, service.Article, articleRouter)
 
 	// Инициализация Контроллера комментариев
