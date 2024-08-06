@@ -1,18 +1,43 @@
 definitions:
-  models.Ad:
+  models.Article:
     properties:
       description:
+        maxLength: 1000
         type: string
+      id:
+        type: integer
       photos:
         items:
           type: string
+        maxItems: 3
         type: array
-      price:
-        type: integer
+      timestamp:
+        type: string
       title:
+        maxLength: 140
         type: string
       user_id:
         type: integer
+    required:
+    - photos
+    - title
+    type: object
+  models.Comment:
+    properties:
+      article_id:
+        type: integer
+      id:
+        type: integer
+      text:
+        maxLength: 500
+        type: string
+      timestamp:
+        type: string
+      user_id:
+        type: integer
+    required:
+    - article_id
+    - text
     type: object
   models.User:
     properties:
@@ -35,7 +60,7 @@ info:
   title: Swagger Example API
   version: "1.0"
 paths:
-  /ad/{id}:
+  /article/{id}:
     get:
       consumes:
       - application/json
@@ -51,9 +76,9 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/models.Ad'
+            $ref: '#/definitions/models.Article'
         "400":
-          description: Bad Request
+          description: Barticle Request
           schema:
             type: string
         "500":
@@ -63,7 +88,7 @@ paths:
       summary: Получение одного объявления
       tags:
       - articles
-  /ad/all/:
+  /article/all/:
     get:
       consumes:
       - application/json
@@ -73,10 +98,6 @@ paths:
         name: page
         required: true
         type: integer
-      - description: Сортировка по цене (asc, desc)
-        in: query
-        name: price
-        type: string
       - description: Сортировка по дате (asc, desc)
         in: query
         name: date
@@ -88,7 +109,60 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/models.Ad'
+              $ref: '#/definitions/models.Article'
+            type: array
+        "400":
+          description: Barticle Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Получение страницы Статей
+      tags:
+      - articles
+  /article/create/:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Объявление
+        in: body
+        name: article
+        required: true
+        schema:
+          $ref: '#/definitions/models.Article'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: int
+        "400":
+          description: Barticle Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Создание объявления
+      tags:
+      - articles
+  /comments/{articleId}:
+    get:
+      consumes:
+      - application/json
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Comment'
             type: array
         "400":
           description: Bad Request
@@ -98,20 +172,20 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Получение страницы объявлений
+      summary: Получение всех комментариев статьи
       tags:
-      - articles
-  /ad/create/:
+      - comments
+  /comments/create/:
     post:
       consumes:
       - application/json
       parameters:
-      - description: Объявление
+      - description: Комментарий
         in: body
-        name: ad
+        name: comment
         required: true
         schema:
-          $ref: '#/definitions/models.Ad'
+          $ref: '#/definitions/models.Comment'
       produces:
       - application/json
       responses:
@@ -127,9 +201,9 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Создание объявления
+      summary: Создание комментария
       tags:
-      - articles
+      - comments
   /user/login/:
     post:
       consumes:

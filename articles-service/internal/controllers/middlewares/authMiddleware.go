@@ -3,6 +3,7 @@ package middlewares
 import (
 	"articles-service/internal/config"
 	"articles-service/internal/lib/types"
+	"articles-service/internal/lib/utils"
 	"log/slog"
 	"strings"
 
@@ -22,7 +23,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return []byte(config.Cfg.AuthGPRC.SecretKey), nil
 		})
 		if err != nil {
-			slog.Warn("failed to parse token", "err", err.Error())
+			utils.ErrorLog("failed to parse token", err)
 			c.Set(types.KeyError, types.ErrInvalidToken)
 			return
 		}

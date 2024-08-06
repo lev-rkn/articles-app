@@ -4,7 +4,6 @@ import (
 	"articles-service/internal/models"
 	"context"
 	"strconv"
-	"strings"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
@@ -50,25 +49,16 @@ func (s *ArticleRepo) GetOne(id int) (*models.Article, error) {
 	return article, err
 }
 
-func (s *ArticleRepo) GetAll(priceSort string, dateSort string, page int, userId int,
+func (s *ArticleRepo) GetAll(dateSort string, page int, userId int,
 ) ([]*models.Article, error) {
-	// сборка строки сортировки по цене и по дате для запроса
 	var orderQuery string
-	sorts := make([]string, 0, 2)
-	if priceSort != "" {
-		sorts = append(sorts, priceSort)
-	}
 	if dateSort != "" {
-		sorts = append(sorts, dateSort)
-	}
-	if len(sorts) > 0 {
-		orderQuery += " ORDER BY " + strings.Join(sorts, ", ")
+		orderQuery += " ORDER BY date " + dateSort
 	}
 
-	var userIdFilterQuery = ""
+	var whereQuery = ""
 	if userId > 0 {
-		id := strconv.Itoa(userId)
-		userIdFilterQuery = "WHERE user_id = " + id
+		whereQuery = " WHERE user_id = " + strconv.Itoa(userId)
 	}
 
 	const articlesPerPage = 10
@@ -77,19 +67,15 @@ func (s *ArticleRepo) GetAll(priceSort string, dateSort string, page int, userId
 	rows, err := s.conn.Query(s.ctx,
 		`SELECT *
 		FROM articles
-		`+userIdFilterQuery+orderQuery+` LIMIT $1 OFFSET $2;`,
+		`+whereQuery+orderQuery+` LIMIT $1 OFFSET $2;`,
 		articlesPerPage, skipArticles)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	// Перекладывание всех объектов объявлений в массив
 	articlesArr := make([]*models.Article, 0, articlesPerPage)
 	err = pgxscan.ScanAll(&articlesArr, rows)
-	if err != nil {
-		return nil, err
-	}
 
-	return articlesArr, nil
+	return articlesArr, err
 }

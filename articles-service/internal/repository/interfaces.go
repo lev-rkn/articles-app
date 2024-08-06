@@ -6,7 +6,7 @@ import "articles-service/internal/models"
 type ArticleRepoInterface interface {
 	Create(ad *models.Article) (int, error)
 	GetOne(id int) (*models.Article, error)
-	GetAll(priceSort string, dateSort string, page int, userId int) ([]*models.Article, error)
+	GetAll(dateSort string, page int, userId int) ([]*models.Article, error)
 }
 
 //go:generate mockery --name CommentRepoInterface --output ./mocks

@@ -70,7 +70,6 @@ POST /ad/create/
 {
   "title": "title",
   "description": "description",
-  "price": 1000,
   "photos": [
     "link1",
     "link2"
@@ -100,14 +99,13 @@ GET /ad/all/?page={pageNumber}
 Ждет на входе URL параметры:
 
 - page - Обязательный параметр, Обозначает номер страницы, каждая страница - 10 объявлений.
-- price - Сортировка по цене (asc - по возрастанию, desc - по убыванию).
 - date - Сортировка по дате создания (asc - по возрастанию, desc - по убыванию).
 - user_id - фильтр по создаваемым определенным пользователем объявлениям.
 
 Пример запроса:
 
 ```bash
-curl "http://localhost:8080/ad/all/?page=1&price=desc"
+curl "http://localhost:8080/ad/all/?page=1&date=desc"
 ```
 
 Возвращает: объект в формате JSON с данными вплоть до 10 объявлений.

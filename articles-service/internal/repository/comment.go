@@ -47,9 +47,6 @@ func (r *CommentRepo) GetCommentsOnArticle(articleId int) ([]*models.Comment, er
 	
 	var commentsArr []*models.Comment
 	err = pgxscan.ScanAll(&commentsArr, rows)
-	if err != nil {
-		return nil, err
-	}
 
-	return commentsArr, nil
+	return commentsArr, err
 }

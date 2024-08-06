@@ -5,6 +5,7 @@ import (
 	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
 	"articles-service/internal/repository"
+	"articles-service/metrics"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
@@ -17,6 +18,15 @@ type commentService struct {
 var _ CommentServiceInterface = (*commentService)(nil)
 
 func (s *commentService) GetCommentsOnArticle(articleId int) ([]*models.Comment, error) {
+	var err error
+	defer func() {
+		if err == nil {
+			go metrics.GetCommentsOK.Inc()
+		} else {
+			go metrics.GetCommentsError.Inc()
+		}
+	}()
+	
 	comments, err := s.repository.Comment.GetCommentsOnArticle(articleId)
 	if err != nil {
 		utils.ErrorLog("service.comment.GetAll", err)
@@ -27,8 +37,18 @@ func (s *commentService) GetCommentsOnArticle(articleId int) ([]*models.Comment,
 }
 
 func (s *commentService) Create(comment *models.Comment) (int, error) {
+
+	var err error
+	defer func() {
+		if err == nil {
+			go metrics.CreateCommentOK.Inc()
+		} else {
+			go metrics.CreateCommentError.Inc()
+		}
+	}()
+
 	// проверяем, что статья действительно существует
-	_, err := s.repository.Article.GetOne(comment.ArticleId)
+	_, err = s.repository.Article.GetOne(comment.ArticleId)
 	if err != nil {
 		utils.ErrorLog("service.comment.create", err)
 		if errors.Is(err, pgx.ErrNoRows) {

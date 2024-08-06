@@ -29,7 +29,8 @@ func NewRepository(ctx context.Context) *Repository {
 	if err != nil {
 		utils.ErrorLog("new migrations", err)
 	}
-	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
 		utils.ErrorLog("migrations up", err)
 	}
 

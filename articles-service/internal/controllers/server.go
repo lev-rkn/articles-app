@@ -27,7 +27,7 @@ import (
 //	@license.name	Apache 2.0
 //	@license.url	http://www.apache.org/licenses/LICENSE-2.0.html
 
-// @host		localhost:8080
+//	@host	localhost:8080
 func NewRouter(ctx context.Context, service *service.Service) *gin.Engine {
 	router := gin.Default()
 	router.GET("/swagger/*any", gin.WrapF(httpSwagger.Handler(

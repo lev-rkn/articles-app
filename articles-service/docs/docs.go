@@ -24,7 +24,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/ad/all/": {
+        "/article/all/": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -35,7 +35,7 @@ const docTemplate = `{
                 "tags": [
                     "articles"
                 ],
-                "summary": "Получение страницы объявлений",
+                "summary": "Получение страницы Статей",
                 "parameters": [
                     {
                         "type": "integer",
@@ -43,12 +43,6 @@ const docTemplate = `{
                         "name": "page",
                         "in": "query",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Сортировка по цене (asc, desc)",
-                        "name": "price",
-                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -63,12 +57,12 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.Ad"
+                                "$ref": "#/definitions/models.Article"
                             }
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Barticle Request",
                         "schema": {
                             "type": "string"
                         }
@@ -82,7 +76,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ad/create/": {
+        "/article/create/": {
             "post": {
                 "consumes": [
                     "application/json"
@@ -97,11 +91,99 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "description": "Объявление",
-                        "name": "ad",
+                        "name": "article",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.Ad"
+                            "$ref": "#/definitions/models.Article"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "type": "int"
+                        }
+                    },
+                    "400": {
+                        "description": "Barticle Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/article/{id}": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "articles"
+                ],
+                "summary": "Получение одного объявления",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "ID объявления",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Article"
+                        }
+                    },
+                    "400": {
+                        "description": "Barticle Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/comments/create/": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "comments"
+                ],
+                "summary": "Создание комментария",
+                "parameters": [
+                    {
+                        "description": "Комментарий",
+                        "name": "comment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Comment"
                         }
                     }
                 ],
@@ -127,7 +209,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/ad/{id}": {
+        "/comments/{articleId}": {
             "get": {
                 "consumes": [
                     "application/json"
@@ -136,23 +218,17 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "articles"
+                    "comments"
                 ],
-                "summary": "Получение одного объявления",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "ID объявления",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "Получение всех комментариев статьи",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/models.Ad"
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Comment"
+                            }
                         }
                     },
                     "400": {
@@ -262,22 +338,57 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Ad": {
+        "models.Article": {
             "type": "object",
+            "required": [
+                "photos",
+                "title"
+            ],
             "properties": {
                 "description": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 1000
+                },
+                "id": {
+                    "type": "integer"
                 },
                 "photos": {
                     "type": "array",
+                    "maxItems": 3,
                     "items": {
                         "type": "string"
                     }
                 },
-                "price": {
-                    "type": "integer"
+                "timestamp": {
+                    "type": "string"
                 },
                 "title": {
+                    "type": "string",
+                    "maxLength": 140
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Comment": {
+            "type": "object",
+            "required": [
+                "article_id",
+                "text"
+            ],
+            "properties": {
+                "article_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "timestamp": {
                     "type": "string"
                 },
                 "user_id": {

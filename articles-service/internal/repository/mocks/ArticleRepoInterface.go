@@ -41,9 +41,9 @@ func (_m *ArticleRepoInterface) Create(ad *models.Article) (int, error) {
 	return r0, r1
 }
 
-// GetAll provides a mock function with given fields: priceSort, dateSort, page, userId
-func (_m *ArticleRepoInterface) GetAll(priceSort string, dateSort string, page int, userId int) ([]*models.Article, error) {
-	ret := _m.Called(priceSort, dateSort, page, userId)
+// GetAll provides a mock function with given fields: dateSort, page, userId
+func (_m *ArticleRepoInterface) GetAll(dateSort string, page int, userId int) ([]*models.Article, error) {
+	ret := _m.Called(dateSort, page, userId)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetAll")
@@ -51,19 +51,19 @@ func (_m *ArticleRepoInterface) GetAll(priceSort string, dateSort string, page i
 
 	var r0 []*models.Article
 	var r1 error
-	if rf, ok := ret.Get(0).(func(string, string, int, int) ([]*models.Article, error)); ok {
-		return rf(priceSort, dateSort, page, userId)
+	if rf, ok := ret.Get(0).(func(string, int, int) ([]*models.Article, error)); ok {
+		return rf(dateSort, page, userId)
 	}
-	if rf, ok := ret.Get(0).(func(string, string, int, int) []*models.Article); ok {
-		r0 = rf(priceSort, dateSort, page, userId)
+	if rf, ok := ret.Get(0).(func(string, int, int) []*models.Article); ok {
+		r0 = rf(dateSort, page, userId)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*models.Article)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string, int, int) error); ok {
-		r1 = rf(priceSort, dateSort, page, userId)
+	if rf, ok := ret.Get(1).(func(string, int, int) error); ok {
+		r1 = rf(dateSort, page, userId)
 	} else {
 		r1 = ret.Error(1)
 	}
