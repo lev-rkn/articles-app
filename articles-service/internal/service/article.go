@@ -17,7 +17,7 @@ type articleService struct {
 
 var _ ArticleServiceInterface = (*articleService)(nil)
 
-func (s *articleService) Create(article *models.Article) (int, error) {
+func (s *articleService) CreateArticle(article *models.Article) (int, error) {
 	var err error
 	defer func() {
 		if err == nil {
@@ -37,7 +37,7 @@ func (s *articleService) Create(article *models.Article) (int, error) {
 	return id, nil
 }
 
-func (s *articleService) GetAll(dateSort string, page int, userId int,
+func (s *articleService) GetAllArticles(dateSort string, page int, userId int,
 ) ([]*models.Article, error) {
 	var err error
 	defer func() {
@@ -58,7 +58,7 @@ func (s *articleService) GetAll(dateSort string, page int, userId int,
 	return articles, nil
 }
 
-func (s *articleService) GetOne(id int) (*models.Article, error) {
+func (s *articleService) GetOneArticle(id int) (*models.Article, error) {
 	var err error
 	defer func() {
 		if err == nil {

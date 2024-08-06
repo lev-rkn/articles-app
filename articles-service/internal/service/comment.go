@@ -17,27 +17,7 @@ type commentService struct {
 
 var _ CommentServiceInterface = (*commentService)(nil)
 
-func (s *commentService) GetCommentsOnArticle(articleId int) ([]*models.Comment, error) {
-	var err error
-	defer func() {
-		if err == nil {
-			go metrics.GetCommentsOK.Inc()
-		} else {
-			go metrics.GetCommentsError.Inc()
-		}
-	}()
-	
-	comments, err := s.repository.Comment.GetCommentsOnArticle(articleId)
-	if err != nil {
-		utils.ErrorLog("service.comment.GetAll", err)
-		return nil, err
-	}
-
-	return comments, nil
-}
-
-func (s *commentService) Create(comment *models.Comment) (int, error) {
-
+func (s *commentService) CreateComment(comment *models.Comment) (int, error) {
 	var err error
 	defer func() {
 		if err == nil {
@@ -65,4 +45,23 @@ func (s *commentService) Create(comment *models.Comment) (int, error) {
 	}
 
 	return id, nil
+}
+
+func (s *commentService) GetCommentsOnArticle(articleId int) ([]*models.Comment, error) {
+	var err error
+	defer func() {
+		if err == nil {
+			go metrics.GetCommentsOK.Inc()
+		} else {
+			go metrics.GetCommentsError.Inc()
+		}
+	}()
+
+	comments, err := s.repository.Comment.GetCommentsOnArticle(articleId)
+	if err != nil {
+		utils.ErrorLog("service.comment.GetCommentsOnArticle", err)
+		return nil, err
+	}
+
+	return comments, nil
 }

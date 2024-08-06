@@ -85,7 +85,7 @@ func (h *articleController) Create(c *gin.Context) {
 		return
 	}
 
-	id, err := h.articleService.Create(article)
+	id, err := h.articleService.CreateArticle(article)
 	if err != nil {
 		utils.ErrorLog("article creating by service", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -144,7 +144,7 @@ func (h *articleController) GetAll(c *gin.Context) {
 		}
 	}
 
-	articlesArr, err := h.articleService.GetAll(dateSorting, pageN, userIdN)
+	articlesArr, err := h.articleService.GetAllArticles(dateSorting, pageN, userIdN)
 	if err != nil {
 		utils.ErrorLog("unable to get articles", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -173,7 +173,7 @@ func (h *articleController) GetOne(c *gin.Context) {
 		return
 	}
 
-	article, err := h.articleService.GetOne(id)
+	article, err := h.articleService.GetOneArticle(id)
 	if err != nil {
 		utils.ErrorLog("unable to get article", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

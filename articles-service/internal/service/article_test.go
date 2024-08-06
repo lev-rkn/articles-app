@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCreate(t *testing.T) {
+func TestCreateArticle(t *testing.T) {
 	testArticle := &models.Article{
 		Title:       "title",
 		UserId:      3,
@@ -54,7 +54,7 @@ func TestCreate(t *testing.T) {
 			service := NewService(repository)
 
 			testCase.mockExp(mockArticleRepoInterface)
-			id, err := service.Article.Create(testArticle)
+			id, err := service.Article.CreateArticle(testArticle)
 
 			assert.Equal(t, testCase.expErr, err)
 			assert.Equal(t, testCase.expId, id)
@@ -63,7 +63,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestGetAll(t *testing.T) {
+func TestGetAllArticles(t *testing.T) {
 	var testArticles []*models.Article = []*models.Article{
 		{
 			Id:          1,
@@ -115,7 +115,7 @@ func TestGetAll(t *testing.T) {
 			service := NewService(repository)
 
 			testCase.mockExp(mockArticleRepoInterface)
-			articles, err := service.Article.GetAll(
+			articles, err := service.Article.GetAllArticles(
 				testDateSort, testPageNumber, testUserId,
 			)
 
@@ -126,7 +126,7 @@ func TestGetAll(t *testing.T) {
 	}
 }
 
-func TestGetOne(t *testing.T) {
+func TestGetOneArticle(t *testing.T) {
 	testArticle := &models.Article{
 		Id:          1,
 		Title:       "title",
@@ -177,7 +177,7 @@ func TestGetOne(t *testing.T) {
 			service := NewService(repository)
 
 			testCase.mockExp(mockArticleRepoInterface)
-			article, err := service.Article.GetOne(testId)
+			article, err := service.Article.GetOneArticle(testId)
 
 			assert.Equal(t, testCase.expArticle, article)
 			assert.Equal(t, testCase.expErr, err)

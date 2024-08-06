@@ -84,7 +84,7 @@ func (h *commentController) CreateComment(c *gin.Context) {
 		return
 	}
 
-	id, err := h.commentService.Create(comment)
+	id, err := h.commentService.CreateComment(comment)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
