@@ -1,10 +1,9 @@
 package service
 
 import (
+	"auth-service/internal/models"
 	"context"
-	"time"
 )
-
 
 type AuthServiceInterface interface {
 	Login(
@@ -12,11 +11,16 @@ type AuthServiceInterface interface {
 		email string,
 		password string,
 		appID int32,
-		tokenTTL time.Duration,
-	) (token string, err error)
+		fingerprint string,
+	) (tokenPair *models.TokenPair, err error)
 	RegisterNewUser(
 		ctx context.Context,
 		email string,
 		password string,
 	) (userID int64, err error)
+	RefreshToken(
+		ctx context.Context,
+		refreshToken string,
+		fingerprint string,
+	) (*models.TokenPair, error)
 }
