@@ -57,6 +57,7 @@ func (a *authController) Login(c *gin.Context) {
 		AppId:    config.Cfg.AuthGPRC.AppId,
 		Email:    user.Email,
 		Password: user.Password,
+		Fingerprint: ююю,
 	}
 	res, err := a.authClient.Api.Login(c, loginIn)
 	if err != nil {
@@ -99,3 +100,5 @@ func (a *authController) Register(c *gin.Context) {
 
 	c.JSON(http.StatusCreated, gin.H{"id": res.GetUserId()})
 }
+
+// TODO: refresh handler
