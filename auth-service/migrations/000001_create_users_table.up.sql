@@ -1,6 +1,6 @@
 CREATE TABLE "users" (
     "id" bigserial PRIMARY KEY,
-    "email" text NOT NULL UNIQUE,
+    "email" varchar(255) NOT NULL UNIQUE,
     "pass_hash" BYTEA NOT NULL
 );
 

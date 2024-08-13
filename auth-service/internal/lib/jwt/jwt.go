@@ -33,7 +33,7 @@ func generateAccessToken(user *models.User, app *models.App, duration time.Durat
     claims["uid"] = user.ID  
     claims["email"] = user.Email  
     claims["exp"] = time.Now().Add(duration).Unix()  
-    claims["app_id"] = app.ID
+    claims["app_id"] = app.Id
 
 	tokenString, err := token.SignedString([]byte(app.Secret))
 	if err != nil {

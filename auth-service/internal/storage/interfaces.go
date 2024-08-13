@@ -11,9 +11,7 @@ type AuthStorageInterface interface {
 	GetApp(ctx context.Context, appID int32) (*models.App, error)
 	SaveRefreshSession(
 		ctx context.Context,
-		refresh_token string,
-		fingerprint string,
-		userId int,
+		session *models.RefreshSession,
 	) error
 	GetRefreshSession(
 		ctx context.Context,

@@ -82,14 +82,22 @@ func (a *AuthStorage) SaveUser(ctx context.Context, email string, passHash []byt
 
 func (a *AuthStorage) SaveRefreshSession(
 	ctx context.Context,
-	refresh_token string,
-	fingerprint string,
-	userId int,
+	session *models.RefreshSession,
 ) error {
+	// TODO: надо бы реализовать хранение сессий через кэширвание
+
+	// Удаляем только конкретную сессию этого юзера, на этом устройстве, этого приложения
+	// если она есть
+	_, _ = a.conn.Exec(ctx,
+		`DELETE FROM refresh_sessions 
+		WHERE user_email=$1 AND fingerprint=$2 AND app_id=$3;`,
+		session.UserEmail, session.Fingerprint, session.AppId,
+	)
+
 	_, err := a.conn.Exec(ctx,
-		`INSERT INTO refreshSessions(refresh_token, fingerprint, user_id) 
-		VALUES ($1, $2, $3);`,
-		refresh_token, fingerprint, userId,
+		`INSERT INTO refresh_sessions(refresh_token, fingerprint, user_email, app_id) 
+		VALUES ($1, $2, $3, $4);`,
+		session.RefreshToken, session.Fingerprint, session.UserEmail, session.AppId,
 	)
 
 	return err
@@ -103,11 +111,11 @@ func (a *AuthStorage) GetRefreshSession(
 
 	err := a.conn.QueryRow(
 		ctx, `
-		SELECT refresh_token, fingerprint, user_email
-		FROM refreshSessions 
+		SELECT refresh_token, fingerprint, user_email, app_id
+		FROM refresh_sessions 
 		WHERE refresh_token=$1;`,
 		refreshToken,
-	).Scan(&session.RefreshToken, &session.Fingerprint, &session.UserEmail)
+	).Scan(&session.RefreshToken, &session.Fingerprint, &session.UserEmail, &session.AppId)
 
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

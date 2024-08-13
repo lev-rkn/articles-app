@@ -65,12 +65,13 @@ func (s *AuthService) Login(
 	}
 
 	// Сохраняем рефреш токен в сессию пользователя
-	err = s.authStorage.SaveRefreshSession(
-		ctx,
-		tokenPair.RefreshToken,
-		fingerprint,
-		user.ID,
-	)
+	session := &models.RefreshSession{
+		RefreshToken: tokenPair.RefreshToken,
+		Fingerprint:  fingerprint,
+		UserEmail:    user.Email,
+		AppId:        appID,
+	}
+	err = s.authStorage.SaveRefreshSession(ctx, session)
 	if err != nil {
 		return nil, fmt.Errorf("authStorage.SaveRefreshSession: %w", err)
 	}
@@ -108,6 +109,12 @@ func (s *AuthService) RefreshToken(
 	tokenPair, err := jwt.NewTokenPair(user, app)
 	if err != nil {
 		return nil, fmt.Errorf("jwt.NewTokenPair: %w", err)
+	}
+	// Сохраняем новую сессию
+	session.RefreshToken = tokenPair.RefreshToken
+	err = s.authStorage.SaveRefreshSession(ctx, session)
+	if err != nil {
+		return nil, fmt.Errorf("authStorage.SaveRefreshSession: %w", err)
 	}
 
 	return tokenPair, nil

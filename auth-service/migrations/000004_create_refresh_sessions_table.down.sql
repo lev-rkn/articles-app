@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS refreshSessions;
+DROP TABLE IF EXISTS refresh_sessions;

@@ -92,7 +92,7 @@ func (s *serverAPI) Login(
 	}, nil
 }
 
-func (s *serverAPI) RefreshTokenPair(
+func (s *serverAPI) Refresh(
 	ctx context.Context,
 	in *authv1.RefreshTokenRequest,
 ) (*authv1.RefreshTokenResponse, error) {
