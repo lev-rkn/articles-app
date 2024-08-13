@@ -3,15 +3,11 @@ package service
 import (
 	"auth-service/internal/lib/jwt"
 	"auth-service/internal/lib/types"
-	"auth-service/internal/lib/utils"
+	"auth-service/internal/models"
 	"auth-service/internal/storage"
 	"context"
-	"errors"
-	"log/slog"
-	"time"
+	"fmt"
 
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgconn"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -25,22 +21,13 @@ func (s *AuthService) RegisterNewUser(
 	// Генерируем хэш и соль для пароля.
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		utils.ErrorLog("failed to generate password hash", err)
-		return 0, err
+		return 0, fmt.Errorf("generate password hash: %w", err)
 	}
 
 	// Сохраняем пользователя в БД
 	id, err := s.authStorage.SaveUser(ctx, email, passHash)
 	if err != nil {
-		utils.ErrorLog("failed to save user", err)
-
-		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) {
-			if pgErr.Code == "23505" {
-				return 0, types.ErrUserExists
-			}
-		}
-		return 0, err
+		return 0, fmt.Errorf("authStorage.SaveUser: %w", err)
 	}
 
 	return id, nil
@@ -51,46 +38,84 @@ func (s *AuthService) Login(
 	email string,
 	password string,
 	appID int32,
-	tokenTTL time.Duration,
-) (string, error) {
+	fingerprint string,
+) (*models.TokenPair, error) {
 	// Достаём пользователя из БД
 	user, err := s.authStorage.GetUser(ctx, email)
 	if err != nil {
-
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.Warn("user not found", "err", err.Error())
-			return "", types.ErrUserNotFound
-		}
-
-		utils.ErrorLog("failed to get user", err)
-		return "", err
+		return nil, fmt.Errorf("authStorage.GetUser: %w", err)
 	}
 
 	// Проверяем пароль пользователя на соответствие
-	if err := bcrypt.CompareHashAndPassword(user.PassHash, []byte(password)); err != nil {
-		slog.Info("invalid credentials", "err", err.Error())
-		return "", types.ErrInvalidCredentials
+	err = bcrypt.CompareHashAndPassword(user.PassHash, []byte(password))
+	if err != nil {
+		return nil, types.ErrInvalidCredentials
 	}
 
 	// Получаем информацию о приложении
 	app, err := s.authStorage.GetApp(ctx, appID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			slog.Warn("app not found", "err", err.Error())
-			return "", types.ErrAppNotFound
-		}
-
-		return "", err
+		return nil, fmt.Errorf("authStorage.GetApp: %w", err)
 	}
 
-	slog.Info("user logged in successfully")
-
-	// Создаём токен авторизации
-	token, err := jwt.NewToken(user, app, tokenTTL)
+	// Генерируем токен доступа и рефреш токен
+	tokenPair, err := jwt.NewTokenPair(user, app)
 	if err != nil {
-		utils.ErrorLog("failed to generate token", err)
-		return "", err
+		return nil, fmt.Errorf("jwt.NewTokenPair: %w", err)
 	}
 
-	return token, nil
+	// Сохраняем рефреш токен в сессию пользователя
+	session := &models.RefreshSession{
+		RefreshToken: tokenPair.RefreshToken,
+		Fingerprint:  fingerprint,
+		UserEmail:    user.Email,
+		AppId:        appID,
+	}
+	err = s.authStorage.SaveRefreshSession(ctx, session)
+	if err != nil {
+		return nil, fmt.Errorf("authStorage.SaveRefreshSession: %w", err)
+	}
+
+	return tokenPair, nil
+}
+
+func (s *AuthService) RefreshToken(
+	ctx context.Context,
+	refreshToken string,
+	fingerprint string,
+) (*models.TokenPair, error) {
+	session, err := s.authStorage.GetRefreshSession(ctx, refreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("authStorage.GetRefreshSession: %w", err)
+	}
+	if fingerprint != session.Fingerprint {
+		return nil, types.ErrUnidentifiedDevice
+	}
+
+	// TODO: делаем 2 лишних запроса на получение юзера и данных о приложении
+	// нужно это дело кэшировать, теоритически данные можно брать из токена.
+
+	// Достаём пользователя из БД
+	user, err := s.authStorage.GetUser(ctx, session.UserEmail)
+	if err != nil {
+		return nil, fmt.Errorf("authStorage.GetUser: %w", err)
+	}
+	// Получаем информацию о приложении
+	app, err := s.authStorage.GetApp(ctx, session.AppId)
+	if err != nil {
+		return nil, fmt.Errorf("authStorage.GetApp: %w", err)
+	}
+	// Генерируем токен доступа и рефреш токен
+	tokenPair, err := jwt.NewTokenPair(user, app)
+	if err != nil {
+		return nil, fmt.Errorf("jwt.NewTokenPair: %w", err)
+	}
+	// Сохраняем новую сессию
+	session.RefreshToken = tokenPair.RefreshToken
+	err = s.authStorage.SaveRefreshSession(ctx, session)
+	if err != nil {
+		return nil, fmt.Errorf("authStorage.SaveRefreshSession: %w", err)
+	}
+
+	return tokenPair, nil
 }

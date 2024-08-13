@@ -6,7 +6,15 @@ import (
 )
 
 type AuthStorageInterface interface {
-	SaveUser(ctx context.Context, email string, passHash []byte) (uid int64, err error)
+	SaveUser(ctx context.Context, email string, passHash []byte) (int64, error)
 	GetUser(ctx context.Context, email string) (*models.User, error)
 	GetApp(ctx context.Context, appID int32) (*models.App, error)
+	SaveRefreshSession(
+		ctx context.Context,
+		session *models.RefreshSession,
+	) error
+	GetRefreshSession(
+		ctx context.Context,
+		refreshToken string,
+	) (*models.RefreshSession, error)
 }

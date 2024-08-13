@@ -130,10 +130,12 @@ func (h *articleController) GetAllArticles(c *gin.Context) {
 	}
 
 	// Проверка, что параметры сортировки по дате содержат либо asc, либо desc
-	if dateSorting != "asc" && dateSorting != "desc" {
-		utils.ErrorLog("Invalid date query parameter"+dateSorting, nil)
-		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidDateSort.Error()})
-		return
+	if dateSorting != "" {
+		if dateSorting != "asc" && dateSorting != "desc" {
+			utils.ErrorLog("Invalid date query parameter"+dateSorting, nil)
+			c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidDateSort.Error()})
+			return
+		}
 	}
 
 	articlesArr, err := h.articleService.GetAllArticles(dateSorting, pageN, userIdN)

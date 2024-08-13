@@ -32,29 +32,26 @@ import (
 func NewRouter(ctx context.Context, service *service.Service) *gin.Engine {
 	router := gin.Default()
 	router.Use(middlewares.AuthMiddleware())
-
+	// TODO: обновить документацию эндпоинтов swagger
 	router.GET("/swagger/*any", gin.WrapF(httpSwagger.Handler(
 		httpSwagger.URL("/swagger/doc.json"),
 	)))
 
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// Инициализация Контроллера объявлений
 	articleRouter := router.Group("/article/")
 	InitArticleController(ctx, service.Article, articleRouter)
 
-	// Инициализация Контроллера комментариев
 	commentRouter := router.Group("/comments/")
 	InitCommentController(ctx, service.Comment, commentRouter)
 
 	// создание экземпляра клиента для обращения к auth по GRPC
-	client, err := auth.NewAuthClient(ctx, config.Cfg.AuthGPRC.Address, time.Second*10, 3)
+	authClient, err := auth.NewAuthClient(ctx, config.Cfg.AuthGPRC.Address, time.Second*10, 3)
 	if err != nil {
 		utils.ErrorLog("create authGRPC client", err)
 	}
-	// Инициализация контроллера аутентификации-авторизации
-	userRouter := router.Group("/user")
-	InitAuthController(ctx, userRouter, client)
+	authRouter := router.Group("/auth")
+	InitAuthController(ctx, authRouter, authClient)
 
 	return router
 }

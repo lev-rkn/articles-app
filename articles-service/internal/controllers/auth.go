@@ -31,6 +31,7 @@ func InitAuthController(
 	}
 	router.POST("/login/", authController.Login)
 	router.POST("/register/", authController.Register)
+	router.POST("/refresh/", authController.Refresh)
 
 	return authController
 }
@@ -54,9 +55,10 @@ func (a *authController) Login(c *gin.Context) {
 	}
 
 	loginIn := &authv1.LoginRequest{
-		AppId:    config.Cfg.AuthGPRC.AppId,
 		Email:    user.Email,
 		Password: user.Password,
+		AppId:    config.Cfg.AuthGPRC.AppId,
+		Fingerprint: c.GetHeader("X-fingerprint"),
 	}
 	res, err := a.authClient.Api.Login(c, loginIn)
 	if err != nil {
@@ -65,7 +67,10 @@ func (a *authController) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"token": res.GetToken()})
+	c.JSON(http.StatusOK, gin.H{
+		"access_token": res.GetAccessToken(),
+		"refresh_token": res.GetRefreshToken(),
+	})
 }
 
 //	@Summary	Регистрация пользователя
@@ -81,7 +86,7 @@ func (a *authController) Register(c *gin.Context) {
 	user := &models.User{}
 	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
-		utils.ErrorLog("unable to decode ad", err)
+		utils.ErrorLog("unable to decode user", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -98,4 +103,30 @@ func (a *authController) Register(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"id": res.GetUserId()})
+}
+
+func (a *authController) Refresh(c *gin.Context) {
+	refreshRequest := struct {
+		RefreshToken string `json:"refresh_token"`
+	}{}
+	err := json.NewDecoder(c.Request.Body).Decode(&refreshRequest)
+	if err != nil {
+		utils.ErrorLog("unable to decode ad", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	refershIn := &authv1.RefreshTokenRequest{
+		AppId:    config.Cfg.AuthGPRC.AppId,
+		Fingerprint: c.GetHeader("X-fingerprint"),
+		RefreshToken: refreshRequest.RefreshToken,
+	}
+	res, err := a.authClient.Api.Refresh(c, refershIn)
+	if err != nil {
+		utils.ErrorLog("unable to refresh token pair", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, res)
 }
