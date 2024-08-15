@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type articleController struct {
@@ -51,7 +50,7 @@ func (h *articleController) CreateArticle(c *gin.Context) {
 	// проверяем наличие ошибки, возможно переданной нам через middleware
 	if err, ok := c.Value(types.KeyError).(error); ok && err != nil {
 		utils.ErrorLog("get error from context", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -59,32 +58,25 @@ func (h *articleController) CreateArticle(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&article)
 	if err != nil {
 		utils.ErrorLog("unable to decode article", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
-	// достаем токен из контекста и берем оттуда id пользователя, создавшего это объявление
-	if v, ok := c.Value(types.KeyUser).(*jwt.Token); ok {
-		if claims, ok := v.Claims.(jwt.MapClaims); ok {
-			if idF, ok := claims["uid"].(float64); ok {
-				id := int(idF)
-				article.UserId = id
-			}
-		}
-	}
+	parsedClaims := utils.ParseUserClaims(c.Value(types.KeyUser))
+	article.UserId = parsedClaims.UserId
 
 	validate := validator.New()
 	err = validate.Struct(article)
 	if err != nil {
 		utils.ErrorLog("validate article", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	id, err := h.articleService.CreateArticle(article)
 	if err != nil {
 		utils.ErrorLog("article creating by service", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -114,7 +106,7 @@ func (h *articleController) GetAllArticles(c *gin.Context) {
 	pageN, err := strconv.Atoi(page)
 	if err != nil {
 		utils.ErrorLog("unable to parse page number", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidPageNumber.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, types.ErrInvalidPageNumber)
 		return
 	}
 
@@ -124,7 +116,7 @@ func (h *articleController) GetAllArticles(c *gin.Context) {
 		userIdN, err = strconv.Atoi(userId)
 		if err != nil {
 			utils.ErrorLog("unable to parse user id", err)
-			c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidUserId.Error()})
+			utils.ErrorResponse(c, http.StatusBadRequest, types.ErrInvalidUserId)
 			return
 		}
 	}
@@ -133,7 +125,7 @@ func (h *articleController) GetAllArticles(c *gin.Context) {
 	if dateSorting != "" {
 		if dateSorting != "asc" && dateSorting != "desc" {
 			utils.ErrorLog("Invalid date query parameter"+dateSorting, nil)
-			c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidDateSort.Error()})
+			utils.ErrorResponse(c, http.StatusBadRequest, types.ErrInvalidDateSort)
 			return
 		}
 	}
@@ -141,7 +133,7 @@ func (h *articleController) GetAllArticles(c *gin.Context) {
 	articlesArr, err := h.articleService.GetAllArticles(dateSorting, pageN, userIdN)
 	if err != nil {
 		utils.ErrorLog("unable to get articles", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -163,14 +155,14 @@ func (h *articleController) GetOneArticle(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		utils.ErrorLog("unable to parse id", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidArticleId.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, types.ErrInvalidArticleId)
 		return
 	}
 
 	article, err := h.articleService.GetOneArticle(id)
 	if err != nil {
 		utils.ErrorLog("unable to get article", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 

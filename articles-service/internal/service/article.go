@@ -1,14 +1,10 @@
 package service
 
 import (
-	"articles-service/internal/lib/types"
-	"articles-service/internal/lib/utils"
 	"articles-service/internal/models"
 	"articles-service/internal/repository"
 	"articles-service/metrics"
-	"errors"
-
-	"github.com/jackc/pgx/v5"
+	"fmt"
 )
 
 type articleService struct {
@@ -28,10 +24,8 @@ func (s *articleService) CreateArticle(article *models.Article) (int, error) {
 	}()
 
 	id, err := s.repository.Article.Create(article)
-	// TODO: никакой обработки ошибок из базы
 	if err != nil {
-		utils.ErrorLog("service.article.Create", err)
-		return -1, err
+		return -1, fmt.Errorf("repository.Article.Create: %w", err)
 	}
 
 	return id, nil
@@ -49,10 +43,8 @@ func (s *articleService) GetAllArticles(dateSort string, page int, userId int,
 	}()
 
 	articles, err := s.repository.Article.GetAll(dateSort, page, userId)
-	// TODO: никакой обработки ошибок из базы
 	if err != nil {
-		utils.ErrorLog("service.article.GetAll", err)
-		return nil, err
+		return nil, fmt.Errorf("repository.Article.GetAll: %w", err)
 	}
 
 	return articles, nil
@@ -70,10 +62,7 @@ func (s *articleService) GetOneArticle(id int) (*models.Article, error) {
 
 	article, err := s.repository.Article.GetOne(id)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, types.ErrArticleNotFound
-		}
-		return nil, err
+		return nil, fmt.Errorf("repository.Article.GetOne: %w", err)
 	}
 
 	return article, nil

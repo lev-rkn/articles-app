@@ -84,8 +84,6 @@ func (a *AuthStorage) SaveRefreshSession(
 	ctx context.Context,
 	session *models.RefreshSession,
 ) error {
-	// TODO: надо бы реализовать хранение сессий через кэширвание
-
 	// Удаляем только конкретную сессию этого юзера, на этом устройстве, этого приложения
 	// если она есть
 	_, _ = a.conn.Exec(ctx,
