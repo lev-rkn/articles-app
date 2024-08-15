@@ -6,17 +6,17 @@ import (
 	"strconv"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ArticleRepo struct {
 	ctx  context.Context
-	conn *pgx.Conn
+	conn *pgxpool.Pool
 }
 
 var _ ArticleRepoInterface = (*ArticleRepo)(nil)
 
-func NewArticleRepo(ctx context.Context, conn *pgx.Conn) *ArticleRepo {
+func NewArticleRepo(ctx context.Context, conn *pgxpool.Pool) *ArticleRepo {
 	return &ArticleRepo{
 		ctx:  ctx,
 		conn: conn,
@@ -53,7 +53,7 @@ func (s *ArticleRepo) GetAll(dateSort string, page int, userId int,
 ) ([]*models.Article, error) {
 	var orderQuery string
 	if dateSort != "" {
-		orderQuery += " ORDER BY date " + dateSort
+		orderQuery += " ORDER BY timestamp " + dateSort
 	}
 
 	var whereQuery = ""

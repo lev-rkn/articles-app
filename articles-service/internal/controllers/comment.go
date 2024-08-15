@@ -31,8 +31,8 @@ func InitCommentController(
 		commentService: commentService,
 	}
 
-	router.GET("/:articleId", commentController.GetCommentsOnArticle)
 	router.POST("/create/", commentController.CreateComment)
+	router.GET("/:articleId", commentController.GetCommentsOnArticle)
 
 	return commentController
 }

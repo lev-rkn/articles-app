@@ -1,21 +1,22 @@
 package repository
 
 import (
+	"articles-service/internal/lib/types"
 	"articles-service/internal/models"
 	"context"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type CommentRepo struct {
 	ctx  context.Context
-	conn *pgx.Conn
+	conn *pgxpool.Pool
 }
 
 var _ CommentRepoInterface = (*CommentRepo)(nil)
 
-func NewCommentRepo(ctx context.Context, conn *pgx.Conn) *CommentRepo {
+func NewCommentRepo(ctx context.Context, conn *pgxpool.Pool) *CommentRepo {
 	return &CommentRepo{
 		ctx:  ctx,
 		conn: conn,
@@ -44,7 +45,11 @@ func (r *CommentRepo) GetCommentsOnArticle(articleId int) ([]*models.Comment, er
 		return nil, err
 	}
 	defer rows.Close()
-	
+
+	if !rows.Next() {
+		return nil, types.ErrNoComments
+	}
+
 	var commentsArr []*models.Comment
 	err = pgxscan.ScanAll(&commentsArr, rows)
 
