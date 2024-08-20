@@ -40,7 +40,6 @@ func (s *serverAPI) Register(
 	uid, err := s.authService.RegisterNewUser(ctx, in.GetEmail(), in.GetPassword())
 	if err != nil {
 		if errors.Is(err, types.ErrUserExists) {
-			// TODO: Полностью отсутствует логирование в слое transport
 			return nil, status.Error(codes.AlreadyExists, err.Error())
 		}
 
@@ -76,7 +75,6 @@ func (s *serverAPI) Login(
 		in.GetFingerprint(),
 	)
 	if err != nil {
-		// TODO добавить утилиту для разворачивания ошибок в ответе
 		if errors.Is(err, types.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}
