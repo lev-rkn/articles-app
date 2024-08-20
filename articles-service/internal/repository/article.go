@@ -1,22 +1,25 @@
 package repository
 
 import (
+	"articles-service/internal/lib/types"
 	"articles-service/internal/models"
 	"context"
+	"errors"
 	"strconv"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ArticleRepo struct {
 	ctx  context.Context
-	conn *pgx.Conn
+	conn *pgxpool.Pool
 }
 
 var _ ArticleRepoInterface = (*ArticleRepo)(nil)
 
-func NewArticleRepo(ctx context.Context, conn *pgx.Conn) *ArticleRepo {
+func NewArticleRepo(ctx context.Context, conn *pgxpool.Pool) *ArticleRepo {
 	return &ArticleRepo{
 		ctx:  ctx,
 		conn: conn,
@@ -29,9 +32,9 @@ func (s *ArticleRepo) Create(article *models.Article) (int, error) {
 		`INSERT INTO articles (title, description, photos, user_id) 
 		VALUES ($1, $2, $3, $4) 
 		RETURNING id;`,
-		article.Title, 
-		article.Description, 
-		article.Photos, 
+		article.Title,
+		article.Description,
+		article.Photos,
 		article.UserId).Scan(&id)
 
 	return id, err
@@ -46,14 +49,21 @@ func (s *ArticleRepo) GetOne(id int) (*models.Article, error) {
 		WHERE id=$1;`, id,
 	)
 
-	return article, err
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, types.ErrArticleNotFound
+		}
+		return nil, err
+	}
+
+	return article, nil
 }
 
 func (s *ArticleRepo) GetAll(dateSort string, page int, userId int,
 ) ([]*models.Article, error) {
 	var orderQuery string
 	if dateSort != "" {
-		orderQuery += " ORDER BY date " + dateSort
+		orderQuery += " ORDER BY timestamp " + dateSort
 	}
 
 	var whereQuery = ""

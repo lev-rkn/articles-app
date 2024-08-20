@@ -1,7 +1,11 @@
 cfg_type: dev
-pg_url: postgres://postgres:postgres@postgres/articles-service?sslmode=disable
-migrations_dir: file://migrations
 http_server_address: 0.0.0.0:8080
+
+postgres:
+  pg_url: postgres://postgres:postgres@postgres/articles-service?sslmode=disable
+  max_connections: 100
+  migrations_dir: file://migrations
+
 auth_grpc:
   address: auth-server:44044
   secret_key: secret123

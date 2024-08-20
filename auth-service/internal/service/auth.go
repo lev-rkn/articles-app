@@ -6,6 +6,7 @@ import (
 	"auth-service/internal/models"
 	"auth-service/internal/storage"
 	"context"
+	"errors"
 	"fmt"
 
 	"golang.org/x/crypto/bcrypt"
@@ -21,13 +22,13 @@ func (s *AuthService) RegisterNewUser(
 	// Генерируем хэш и соль для пароля.
 	passHash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		return 0, fmt.Errorf("generate password hash: %w", err)
+		return -1, fmt.Errorf("generate password hash: %w", err)
 	}
 
 	// Сохраняем пользователя в БД
 	id, err := s.authStorage.SaveUser(ctx, email, passHash)
 	if err != nil {
-		return 0, fmt.Errorf("authStorage.SaveUser: %w", err)
+		return -1, fmt.Errorf("authStorage.SaveUser: %w", err)
 	}
 
 	return id, nil
@@ -98,6 +99,7 @@ func (s *AuthService) RefreshToken(
 	// Достаём пользователя из БД
 	user, err := s.authStorage.GetUser(ctx, session.UserEmail)
 	if err != nil {
+		errors.Join()
 		return nil, fmt.Errorf("authStorage.GetUser: %w", err)
 	}
 	// Получаем информацию о приложении

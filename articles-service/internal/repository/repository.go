@@ -5,7 +5,7 @@ import (
 	"articles-service/internal/lib/utils"
 	"context"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
@@ -18,14 +18,14 @@ type Repository struct {
 }
 
 func NewRepository(ctx context.Context) *Repository {
-	// подключение к postgres
-	conn, err := pgx.Connect(context.Background(), config.Cfg.PgUrl)
+	pool, err := pgxpool.New(ctx, config.Cfg.Postgres.PgUrl)
 	if err != nil {
 		utils.ErrorLog("Unable to connect to database", err)
 	}
+	pool.Config().MaxConns = config.Cfg.Postgres.MaxConnections
 
 	// запуск миграций
-	m, err := migrate.New(config.Cfg.MigrationsDir, config.Cfg.PgUrl)
+	m, err := migrate.New(config.Cfg.Postgres.MigrationsDir, config.Cfg.Postgres.PgUrl)
 	if err != nil {
 		utils.ErrorLog("new migrations", err)
 	}
@@ -35,8 +35,8 @@ func NewRepository(ctx context.Context) *Repository {
 	}
 
 	var repository = &Repository{
-		Article: NewArticleRepo(ctx, conn),
-		Comment: NewCommentRepo(ctx, conn),
+		Article: NewArticleRepo(ctx, pool),
+		Comment: NewCommentRepo(ctx, pool),
 	}
 
 	return repository

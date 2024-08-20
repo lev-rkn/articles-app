@@ -11,16 +11,21 @@ import (
 
 type Config struct {
 	CfgType           string         `mapstructure:"cfg_type"`
-	PgUrl             string         `mapstructure:"pg_url"`
-	MigrationsDir     string         `mapstructure:"migrations_dir"`
 	HTTPServerAddress string         `mapstructure:"http_server_address"`
 	AuthGPRC          AuthGPRCConfig `mapstructure:"auth_grpc"`
+	Postgres          PostgresConfig `mapstructure:"postgres"`
 }
 
 type AuthGPRCConfig struct {
 	Address   string `mapstructure:"address"`
 	SecretKey string `mapstructure:"secret_key"`
-	AppId     int32 `mapstructure:"app_id"`
+	AppId     int32  `mapstructure:"app_id"`
+}
+
+type PostgresConfig struct {
+	PgUrl          string `mapstructure:"pg_url"`
+	MaxConnections int32  `mapstructure:"max_connections"`
+	MigrationsDir  string `mapstructure:"migrations_dir"`
 }
 
 var Cfg *Config

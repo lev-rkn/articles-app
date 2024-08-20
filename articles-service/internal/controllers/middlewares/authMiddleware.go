@@ -18,7 +18,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		// Получаем JWT-токен из запроса
 		tokenStr := extractBearerToken(c)
 		if tokenStr == "" {
-			// где-то и не нужна аутентификация
+			c.Set(types.KeyError, types.ErrInvalidToken)
 			return
 		}
 
@@ -32,7 +32,7 @@ func AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		slog.Info("user authorized", slog.Any("claims", token))
+		slog.Debug("user authorized", slog.Any("claims", token))
 
 		// Полученны данные сохраняем в контекст,
 		// откуда его смогут получить следующие хэндлеры.

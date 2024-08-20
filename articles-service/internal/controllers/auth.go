@@ -36,58 +36,58 @@ func InitAuthController(
 	return authController
 }
 
-//	@Summary	Аутентификация пользователя
-//	@Tags		auth
-//	@Accept		json
-//	@Produce	json
-//	@Param		user	body		models.User	true	"Почта и пароль пользователя"
-//	@Success	200		{string}	string		"token"
-//	@Failure	400		{string}	string		"Bad Request"
-//	@Failure	500		{string}	string		"Internal Server Error"
-//	@Router		/user/login/ [post]
+// @Summary	Аутентификация пользователя
+// @Tags		auth
+// @Accept		json
+// @Produce	json
+// @Param		user	body		models.User	true	"Почта и пароль пользователя"
+// @Success	200		{string}	string		"token"
+// @Failure	400		{string}	string		"Bad Request"
+// @Failure	500		{string}	string		"Internal Server Error"
+// @Router		/user/login/ [post]
 func (a *authController) Login(c *gin.Context) {
 	user := &models.User{}
 	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
-		utils.ErrorLog("unable to decode ad", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorLog("unable to decode json", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	loginIn := &authv1.LoginRequest{
-		Email:    user.Email,
-		Password: user.Password,
-		AppId:    config.Cfg.AuthGPRC.AppId,
+		Email:       user.Email,
+		Password:    user.Password,
+		AppId:       config.Cfg.AuthGPRC.AppId,
 		Fingerprint: c.GetHeader("X-fingerprint"),
 	}
 	res, err := a.authClient.Api.Login(c, loginIn)
 	if err != nil {
 		utils.ErrorLog("unable to login", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"access_token": res.GetAccessToken(),
+		"access_token":  res.GetAccessToken(),
 		"refresh_token": res.GetRefreshToken(),
 	})
 }
 
-//	@Summary	Регистрация пользователя
-//	@Tags		auth
-//	@Accept		json
-//	@Produce	json
-//	@Param		user	body		models.User	true	"Почта и пароль пользователя"
-//	@Success	201		{string}	int			"id"
-//	@Failure	400		{string}	string		"Bad Request"
-//	@Failure	500		{string}	string		"Internal Server Error"
-//	@Router		/user/register/ [post]
+// @Summary	Регистрация пользователя
+// @Tags		auth
+// @Accept		json
+// @Produce	json
+// @Param		user	body		models.User	true	"Почта и пароль пользователя"
+// @Success	201		{string}	int			"id"
+// @Failure	400		{string}	string		"Bad Request"
+// @Failure	500		{string}	string		"Internal Server Error"
+// @Router		/user/register/ [post]
 func (a *authController) Register(c *gin.Context) {
 	user := &models.User{}
 	err := json.NewDecoder(c.Request.Body).Decode(&user)
 	if err != nil {
 		utils.ErrorLog("unable to decode user", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -98,33 +98,35 @@ func (a *authController) Register(c *gin.Context) {
 	res, err := a.authClient.Api.Register(c, registerIn)
 	if err != nil {
 		utils.ErrorLog("unable to register", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	c.JSON(http.StatusCreated, gin.H{"id": res.GetUserId()})
 }
 
+type RefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 func (a *authController) Refresh(c *gin.Context) {
-	refreshRequest := struct {
-		RefreshToken string `json:"refresh_token"`
-	}{}
-	err := json.NewDecoder(c.Request.Body).Decode(&refreshRequest)
+	var request RefreshRequest
+	err := c.ShouldBindJSON(&request)
 	if err != nil {
-		utils.ErrorLog("unable to decode ad", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorLog("unable to decode token", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	refershIn := &authv1.RefreshTokenRequest{
-		AppId:    config.Cfg.AuthGPRC.AppId,
-		Fingerprint: c.GetHeader("X-fingerprint"),
-		RefreshToken: refreshRequest.RefreshToken,
+		AppId:        config.Cfg.AuthGPRC.AppId,
+		Fingerprint:  c.GetHeader("X-fingerprint"),
+		RefreshToken: request.RefreshToken,
 	}
 	res, err := a.authClient.Api.Refresh(c, refershIn)
 	if err != nil {
 		utils.ErrorLog("unable to refresh token pair", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 

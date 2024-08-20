@@ -75,7 +75,6 @@ func (s *serverAPI) Login(
 		in.GetFingerprint(),
 	)
 	if err != nil {
-		// TODO: нужно ошибки оборачивать в join, чтобы можно было отправить нужный код
 		if errors.Is(err, types.ErrInvalidCredentials) {
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		}

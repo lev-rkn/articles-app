@@ -13,7 +13,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 type commentController struct {
@@ -31,8 +30,8 @@ func InitCommentController(
 		commentService: commentService,
 	}
 
-	router.GET("/:articleId", commentController.GetCommentsOnArticle)
 	router.POST("/create/", commentController.CreateComment)
+	router.GET("/:articleId", commentController.GetCommentsOnArticle)
 
 	return commentController
 }
@@ -49,9 +48,9 @@ func InitCommentController(
 func (h *commentController) CreateComment(c *gin.Context) {
 	go metrics.CreateCommentRequest.Inc()
 	// проверяем наличие ошибки, возможно переданной нам через middleware
-	if v, ok := c.Value(types.KeyError).(error); ok {
-		if v != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": v.Error()})
+	if err, ok := c.Value(types.KeyError).(error); ok {
+		if err != nil {
+			utils.ErrorResponse(c, http.StatusBadRequest, err)
 			return
 		}
 	}
@@ -60,30 +59,25 @@ func (h *commentController) CreateComment(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&comment)
 	if err != nil {
 		utils.ErrorLog("unable to decode comment", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
-	// достаем токен из контекста и берем оттуда id пользователя, создавшего этот коммент
-	if v, ok := c.Value(types.KeyUser).(*jwt.Token); ok {
-		if claims, ok := v.Claims.(jwt.MapClaims); ok {
-			if idF, ok := claims["uid"].(float64); ok {
-				id := int(idF)
-				comment.UserId = id
-			}
-		}
-	}
+	parsedClaims := utils.ParseUserClaims(c.Value(types.KeyUser))
+	comment.UserId = parsedClaims.UserId
 
 	validate := validator.New()
 	err = validate.Struct(comment)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		utils.ErrorLog("validate comment", err)
+		utils.ErrorResponse(c, http.StatusBadRequest, err)
 		return
 	}
 
 	id, err := h.commentService.CreateComment(comment)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorLog("unable to create comment", err)
+		utils.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -104,14 +98,14 @@ func (h *commentController) GetCommentsOnArticle(c *gin.Context) {
 	articleId, err := strconv.Atoi(c.Param("articleId"))
 	if err != nil {
 		utils.ErrorLog("parse articleId", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": types.ErrInvalidArticleId.Error()})
+		utils.ErrorResponse(c, http.StatusBadRequest, types.ErrInvalidArticleId)
 		return
 	}
 
 	commentsArr, err := h.commentService.GetCommentsOnArticle(articleId)
 	if err != nil {
 		utils.ErrorLog("unable to get comments", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		utils.ErrorResponse(c, http.StatusInternalServerError, err)
 		return
 	}
 
