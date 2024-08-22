@@ -5,30 +5,35 @@ import (
 	"articles-service/internal/models"
 	"context"
 	"errors"
+	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 )
 
 type ArticleRepo struct {
-	ctx  context.Context
-	conn *pgxpool.Pool
+	ctx context.Context
+	pg  *pgxpool.Pool
+	rdb *redis.Client
 }
 
 var _ ArticleRepoInterface = (*ArticleRepo)(nil)
 
-func NewArticleRepo(ctx context.Context, conn *pgxpool.Pool) *ArticleRepo {
+func NewArticleRepo(ctx context.Context, pg *pgxpool.Pool, rdb *redis.Client) *ArticleRepo {
 	return &ArticleRepo{
-		ctx:  ctx,
-		conn: conn,
+		ctx: ctx,
+		pg:  pg,
+		rdb: rdb,
 	}
 }
 
-func (s *ArticleRepo) Create(article *models.Article) (int, error) {
+func (r *ArticleRepo) Create(article *models.Article) (int, error) {
 	var id int
-	err := s.conn.QueryRow(s.ctx,
+	err := r.pg.QueryRow(r.ctx,
 		`INSERT INTO articles (title, description, photos, user_id) 
 		VALUES ($1, $2, $3, $4) 
 		RETURNING id;`,
@@ -40,26 +45,39 @@ func (s *ArticleRepo) Create(article *models.Article) (int, error) {
 	return id, err
 }
 
-func (s *ArticleRepo) GetOne(id int) (*models.Article, error) {
+func (r *ArticleRepo) GetOne(id int) (*models.Article, error) {
+	idStr := strconv.Itoa(id)
 	article := &models.Article{}
-	err := pgxscan.Get(
-		s.ctx, s.conn, article, `
-		SELECT *
-		FROM articles 
-		WHERE id=$1;`, id,
-	)
 
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, types.ErrArticleNotFound
+	redisRes := r.rdb.Get(r.ctx, "article:"+idStr)
+	if redisRes.Err() != nil{
+		// если статьи нету в кэше, то делаем запрос в бд
+		err := pgxscan.Get(
+			r.ctx, r.pg, article, `
+			SELECT *
+			FROM articles 
+			WHERE id=$1;`, id,
+		)
+		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return nil, types.ErrArticleNotFound
+			}
+			return nil, fmt.Errorf("get article from pg: %w", err)
 		}
-		return nil, err
+		// кэшируем полученную из бд статью
+		err = r.rdb.Set(r.ctx, "article:"+idStr, article, 0).Err()
+		if err != nil {
+			return nil, fmt.Errorf("save article to cache: %w", err)
+		}
+	} else {
+		redisRes.Scan(article)
+		slog.Debug("get article from cache")
 	}
 
 	return article, nil
 }
 
-func (s *ArticleRepo) GetAll(dateSort string, page int, userId int,
+func (r *ArticleRepo) GetAll(dateSort string, page int, userId int,
 ) ([]*models.Article, error) {
 	var orderQuery string
 	if dateSort != "" {
@@ -74,7 +92,7 @@ func (s *ArticleRepo) GetAll(dateSort string, page int, userId int,
 	const articlesPerPage = 10
 	var skipArticles = articlesPerPage * (page)
 
-	rows, err := s.conn.Query(s.ctx,
+	rows, err := r.pg.Query(r.ctx,
 		`SELECT *
 		FROM articles
 		`+whereQuery+orderQuery+` LIMIT $1 OFFSET $2;`,

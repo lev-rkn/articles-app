@@ -26,6 +26,14 @@ services:
     networks:
       - service
 
+  redis:
+    image: redis:7.4-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - service
+
+
 volumes:
   pgdata:
 

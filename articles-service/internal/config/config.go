@@ -12,20 +12,27 @@ import (
 type Config struct {
 	CfgType           string         `mapstructure:"cfg_type"`
 	HTTPServerAddress string         `mapstructure:"http_server_address"`
-	AuthGPRC          AuthGPRCConfig `mapstructure:"auth_grpc"`
-	Postgres          PostgresConfig `mapstructure:"postgres"`
+	AuthGPRC          authGPRCConfig `mapstructure:"auth_grpc"`
+	Postgres          postgresConfig `mapstructure:"postgres"`
+	Redis             redisConfig    `mapstructure:"redis"`
 }
 
-type AuthGPRCConfig struct {
+type authGPRCConfig struct {
 	Address   string `mapstructure:"address"`
 	SecretKey string `mapstructure:"secret_key"`
 	AppId     int32  `mapstructure:"app_id"`
 }
 
-type PostgresConfig struct {
+type postgresConfig struct {
 	PgUrl          string `mapstructure:"pg_url"`
 	MaxConnections int32  `mapstructure:"max_connections"`
 	MigrationsDir  string `mapstructure:"migrations_dir"`
+}
+
+type redisConfig struct {
+	Address  string `mapstructure:"address"`
+	DB       int `mapstructure:"database"`
+	Password string `mapstructure:"password"`
 }
 
 var Cfg *Config

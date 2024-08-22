@@ -1,12 +1,17 @@
 cfg_type: local
 http_server_address: 0.0.0.0:8080
 
+auth_grpc:
+  address: localhost:44044
+  secret_key: secret123
+  app_id: 1
+
 postgres:
   pg_url: postgres://postgres:postgres@localhost:5432/articles-service?sslmode=disable
   max_connections: 100
   migrations_dir: file://migrations
 
-auth_grpc:
-  address: localhost:44044
-  secret_key: secret123
-  app_id: 1
+redis:
+  address: localhost:6379
+  database: 0
+  password: 
