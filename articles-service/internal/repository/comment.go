@@ -56,8 +56,7 @@ func (r *CommentRepo) Create(comment *models.Comment) (int, error) {
 		if err != nil {
 			return -1, fmt.Errorf("comments marshalling: %w", err)
 		}
-		err = r.rdb.Set(r.ctx, "comments:"+articleIdStr, marshalled, 0).Err()
-		if err != nil {
+		if err := r.rdb.Set(r.ctx, "comments:"+articleIdStr, marshalled, 0).Err(); err != nil {
 			return -1, fmt.Errorf("save comments to cache: %w", err)
 		}
 	}
@@ -71,34 +70,6 @@ func (r *CommentRepo) GetCommentsOnArticle(articleId int) ([]*models.Comment, er
 
 	redisRes := r.rdb.Get(r.ctx, "comments:"+articleIdStr)
 	if redisRes.Err() != nil {
-		// при отстутствии комментариев в кэше - берем из бд
-		rows, err := r.pg.Query(r.ctx,
-			`SELECT *
-			FROM comments
-			WHERE article_id=$1`, articleId)
-		if err != nil {
-			return nil, fmt.Errorf("get comments from db: %w", err)
-		}
-
-		if err := pgxscan.ScanAll(&commentsArr, rows); err != nil {
-			return nil, fmt.Errorf("scan comment rows: %w", err)
-		}
-		rows.Close()
-
-		if rows.CommandTag().RowsAffected() == 0 {
-			return nil, types.ErrNoComments
-		}
-
-		// кэширование комментариев статьи
-		marshalled, err := json.Marshal(commentsArr)
-		if err != nil {
-			return nil, fmt.Errorf("comments marshalling: %w", err)
-		}
-		err = r.rdb.Set(r.ctx, "comments:"+articleIdStr, marshalled, 0).Err()
-		if err != nil {
-			return nil, fmt.Errorf("save comments to cache: %w", err)
-		}
-	} else {
 		// берем комментарии из кэша
 		result, _ := redisRes.Result()
 		if err := json.Unmarshal([]byte(result), &commentsArr); err != nil {
@@ -106,6 +77,35 @@ func (r *CommentRepo) GetCommentsOnArticle(articleId int) ([]*models.Comment, er
 		}
 
 		slog.Debug("get comments from cache")
+		return commentsArr, nil
+	}
+
+	// при отстутствии комментариев в кэше - берем из бд
+	rows, err := r.pg.Query(r.ctx,
+		`SELECT *
+			FROM comments
+			WHERE article_id=$1`, articleId)
+	if err != nil {
+		return nil, fmt.Errorf("get comments from db: %w", err)
+	}
+
+	if err := pgxscan.ScanAll(&commentsArr, rows); err != nil {
+		return nil, fmt.Errorf("scan comment rows: %w", err)
+	}
+	rows.Close()
+
+	if rows.CommandTag().RowsAffected() == 0 {
+		return nil, types.ErrNoComments
+	}
+
+	// кэширование комментариев статьи
+	marshalled, err := json.Marshal(commentsArr)
+	if err != nil {
+		return nil, fmt.Errorf("comments marshalling: %w", err)
+	}
+	err = r.rdb.Set(r.ctx, "comments:"+articleIdStr, marshalled, 0).Err()
+	if err != nil {
+		return nil, fmt.Errorf("save comments to cache: %w", err)
 	}
 
 	return commentsArr, nil

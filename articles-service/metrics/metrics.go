@@ -5,7 +5,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-//articles
+// articles
 var (
 	CreateArticleRequest = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "create_article_request_count",

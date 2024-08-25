@@ -145,7 +145,7 @@ func TestGetOneArticle(t *testing.T) {
 			name: "Успешный кейс, все по плану",
 			mockExp: func(articleRepo *mocks.ArticleRepoInterface) {
 				articleRepo.On("GetOne", testId).
-				Return(testArticle, nil).Times(1)
+					Return(testArticle, nil).Times(1)
 			},
 			expArticle: testArticle,
 			expErr:     nil,
@@ -154,7 +154,7 @@ func TestGetOneArticle(t *testing.T) {
 			name: "Вернулась ошибка, что статья не найдена",
 			mockExp: func(articleRepo *mocks.ArticleRepoInterface) {
 				articleRepo.On("GetOne", testId).
-				Return(nil, pgx.ErrNoRows).Times(1)
+					Return(nil, pgx.ErrNoRows).Times(1)
 			},
 			expArticle: nil,
 			expErr:     types.ErrArticleNotFound,
@@ -163,7 +163,7 @@ func TestGetOneArticle(t *testing.T) {
 			name: "Вернулась любая другая ошибка",
 			mockExp: func(articleRepo *mocks.ArticleRepoInterface) {
 				articleRepo.On("GetOne", testId).
-				Return(nil, errors.New("some error")).Times(1)
+					Return(nil, errors.New("some error")).Times(1)
 			},
 			expArticle: nil,
 			expErr:     errors.New("some error"),

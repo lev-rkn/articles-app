@@ -147,7 +147,7 @@ func TestGetCommentsOnArticle(t *testing.T) {
 			service := NewService(repository)
 
 			testCase.mockExp(mockCommentRepoInterface)
-			comments, err := service.Comment.GetCommentsOnArticle(testArticleId,)
+			comments, err := service.Comment.GetCommentsOnArticle(testArticleId)
 
 			assert.Equal(t, testCase.expComments, comments)
 			assert.Equal(t, testCase.expErr, err)

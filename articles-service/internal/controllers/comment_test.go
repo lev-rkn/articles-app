@@ -33,7 +33,7 @@ func TestCreateComment(t *testing.T) {
 	testCases := []struct {
 		name        string
 		mockExpect  func(commentService *mocks.CommentServiceInterface)
-		reqData     string // то, что мы кидаем в нашу тестируему функцию как тело запроса
+		reqData     string         // то, что мы кидаем в нашу тестируему функцию как тело запроса
 		inContext   map[string]any // внедряем в контекст роутера
 		expJSON     string
 		expError    bool // если ожидается ошибка - мы точно не знаем какая
@@ -55,7 +55,7 @@ func TestCreateComment(t *testing.T) {
 			expError:    true,
 			expHTTPCode: http.StatusBadRequest,
 		},
-				{
+		{
 			name:       "Подсовываем ошибку в контексте",
 			mockExpect: func(commentService *mocks.CommentServiceInterface) {},
 			reqData:    commentInJSON,

@@ -4,8 +4,6 @@ import (
 	"articles-service/internal/repository"
 )
 
-
-
 type Service struct {
 	Article ArticleServiceInterface
 	Comment CommentServiceInterface

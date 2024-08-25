@@ -48,30 +48,34 @@ func (r *ArticleRepo) Create(article *models.Article) (int, error) {
 func (r *ArticleRepo) GetOne(id int) (*models.Article, error) {
 	idStr := strconv.Itoa(id)
 	article := &models.Article{}
-
+	// попытка получить статью из кэша
 	redisRes := r.rdb.Get(r.ctx, "article:"+idStr)
-	if redisRes.Err() != nil{
-		// если статьи нету в кэше, то делаем запрос в бд
-		err := pgxscan.Get(
-			r.ctx, r.pg, article, `
+	if redisRes.Err() == nil {
+		if err := redisRes.Scan(article); err != nil {
+			return nil, fmt.Errorf("redisRes.Scan(article): %w", err)
+		}
+		slog.Debug("get article from cache")
+
+		return article, nil
+	}
+
+	// если статьи нету в кэше, то делаем запрос в бд
+	err := pgxscan.Get(
+		r.ctx, r.pg, article, `
 			SELECT *
 			FROM articles 
 			WHERE id=$1;`, id,
-		)
-		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				return nil, types.ErrArticleNotFound
-			}
-			return nil, fmt.Errorf("get article from pg: %w", err)
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, types.ErrArticleNotFound
 		}
-		// кэшируем полученную из бд статью
-		err = r.rdb.Set(r.ctx, "article:"+idStr, article, 0).Err()
-		if err != nil {
-			return nil, fmt.Errorf("save article to cache: %w", err)
-		}
-	} else {
-		redisRes.Scan(article)
-		slog.Debug("get article from cache")
+		return nil, fmt.Errorf("get article from pg: %w", err)
+	}
+	// кэшируем полученную из бд статью
+	err = r.rdb.Set(r.ctx, "article:"+idStr, article, 0).Err()
+	if err != nil {
+		return nil, fmt.Errorf("save article to cache: %w", err)
 	}
 
 	return article, nil

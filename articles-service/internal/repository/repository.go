@@ -35,10 +35,10 @@ func NewRepository(ctx context.Context) *Repository {
 	}
 
 	rdb := redis.NewClient(&redis.Options{
-        Addr:     config.Cfg.Redis.Address,
-        Password: config.Cfg.Redis.Password,
-        DB:       config.Cfg.Redis.DB,
-    })
+		Addr:     config.Cfg.Redis.Address,
+		Password: config.Cfg.Redis.Password,
+		DB:       config.Cfg.Redis.DB,
+	})
 
 	var repository = &Repository{
 		Article: NewArticleRepo(ctx, pool, rdb),

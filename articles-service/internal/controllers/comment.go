@@ -36,15 +36,15 @@ func InitCommentController(
 	return commentController
 }
 
-//	@Summary	Создание комментария
-//	@Tags		comments
-//	@Accept		json
-//	@Produce	json
-//	@Param		comment	body		models.Comment	true	"Комментарий"
-//	@Success	201		{int}		id
-//	@Failure	400		{string}	string	"Bad Request"
-//	@Failure	500		{string}	string	"Internal Server Error"
-//	@Router		/comments/create/ [post]
+// @Summary	Создание комментария
+// @Tags		comments
+// @Accept		json
+// @Produce	json
+// @Param		comment	body		models.Comment	true	"Комментарий"
+// @Success	201		{int}		id
+// @Failure	400		{string}	string	"Bad Request"
+// @Failure	500		{string}	string	"Internal Server Error"
+// @Router		/comments/create/ [post]
 func (h *commentController) CreateComment(c *gin.Context) {
 	go metrics.CreateCommentRequest.Inc()
 	// проверяем наличие ошибки, возможно переданной нам через middleware
@@ -84,14 +84,14 @@ func (h *commentController) CreateComment(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"id": id})
 }
 
-//	@Summary	Получение всех комментариев статьи
-//	@Tags		comments
-//	@Accept		json
-//	@Produce	json
-//	@Success	200	{array}		models.Comment
-//	@Failure	400	{string}	string			"Bad Request"
-//	@Failure	500	{string}	string			"Internal Server Error"
-//	@Router		/comments/{articleId} [get]
+// @Summary	Получение всех комментариев статьи
+// @Tags		comments
+// @Accept		json
+// @Produce	json
+// @Success	200	{array}		models.Comment
+// @Failure	400	{string}	string			"Bad Request"
+// @Failure	500	{string}	string			"Internal Server Error"
+// @Router		/comments/{articleId} [get]
 func (h *commentController) GetCommentsOnArticle(c *gin.Context) {
 	go metrics.GetCommentsRequest.Inc()
 

@@ -251,7 +251,7 @@ func TestGetOneArticle(t *testing.T) {
 			name: "Любая ошибка из сервиса объявлений",
 			mockExp: func(articleService *mocks.ArticleServiceInterface) {
 				articleService.On("GetOneArticle", 4).
-				Return(nil, errors.New("some error"))
+					Return(nil, errors.New("some error"))
 			},
 			articleId:   "4",
 			expJSON:     `{"error":"some error"}`,
